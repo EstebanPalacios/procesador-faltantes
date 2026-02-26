@@ -191,8 +191,12 @@ def asignar_cuenta(df_final, dict_b1, dict_b7, dict_b5, dict_b6):
 
     for i, row in df_final.iterrows():
 
-        bod = row["Bod"]
-        codigo = str(row["Codigo"]).strip().upper()
+        bod = int(row["Bod"])
+
+        # 🔥 LIMPIEZA EXACTA COMO EN TU PRIMER BLOQUE
+        codigo = limpiar_valor(row["Codigo"])
+        codigo = str(codigo).strip().upper()
+
         id_val = str(bod) + codigo
 
         if bod == 21:
@@ -211,7 +215,6 @@ def asignar_cuenta(df_final, dict_b1, dict_b7, dict_b5, dict_b6):
             df_final.at[i, "CUENTA"] = dict_b6.get(id_val, "")
 
     return df_final
-
 
 # =========================================================
 # INTERFAZ STREAMLIT
