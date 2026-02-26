@@ -26,9 +26,9 @@ def limpiar_texto(texto):
 def leer_archivo(file):
     try:
         file.seek(0)
-        if file.name.endswith(".xlsx") or file.name.endswith(".xls"):
+        if file.name.lower().endswith((".xlsx", ".xls")):
             return pd.read_excel(file, engine="openpyxl")
-        elif file.name.endswith(".csv"):
+        elif file.name.lower().endswith(".csv"):
             try:
                 return pd.read_csv(file, encoding="utf-8")
             except:
@@ -51,21 +51,36 @@ def procesar_bodega(file, numero_bodega):
     if df is None:
         return {}
 
-    if "Codigo" not in df.columns or "Nombres" not in df.columns:
-        st.error(f"El archivo de Bodega {numero_bodega} no tiene las columnas requeridas.")
+    # Normalizar columnas
+    df.columns = [
+        unicodedata.normalize('NFKD', col)
+        .encode('ascii', errors='ignore')
+        .decode('utf-8')
+        .strip()
+        .upper()
+        for col in df.columns
+    ]
+
+    # Detectar columnas necesarias
+    col_codigo = next((c for c in df.columns if "COD" in c), None)
+    col_nombre = next((c for c in df.columns if "NOM" in c), None)
+
+    if col_codigo is None or col_nombre is None:
+        st.error(f"Bodega {numero_bodega} no contiene columnas válidas de Código o Nombre.")
         return {}
 
-    df["Codigo"] = df["Codigo"].astype(str).str.strip().str.upper()
-    df["Nombres"] = df["Nombres"].apply(limpiar_texto)
-    df["ID"] = str(numero_bodega) + df["Codigo"]
+    df[col_codigo] = df[col_codigo].astype(str).str.strip().str.upper()
+    df[col_nombre] = df[col_nombre].apply(limpiar_texto)
+
+    df["ID"] = str(numero_bodega) + df[col_codigo]
 
     consolidado = (
-        df.groupby("ID")["Nombres"]
+        df.groupby("ID")[col_nombre]
         .apply(lambda x: ", ".join(sorted(set(x))))
         .reset_index()
     )
 
-    return dict(zip(consolidado["ID"], consolidado["Nombres"]))
+    return dict(zip(consolidado["ID"], consolidado[col_nombre]))
 
 
 # ===============================
@@ -83,70 +98,109 @@ b6 = st.file_uploader("Bodega 6", type=["xlsx", "xls", "csv"])
 
 
 # ===============================
-# PROCESAR
+# PROCESAMIENTO
 # ===============================
 
 if st.button("PROCESAR INFORMACIÓN"):
 
     if faltantes_file is None:
         st.error("Debe cargar el Informe de Faltantes.")
-    else:
-        df_final = leer_archivo(faltantes_file)
+        st.stop()
 
-        if df_final is None:
-            st.stop()
+    df_final = leer_archivo(faltantes_file)
 
-        if "Codigo" not in df_final.columns or "Bod" not in df_final.columns:
-            st.error("El informe debe contener columnas 'Codigo' y 'Bod'.")
-            st.stop()
+    if df_final is None:
+        st.stop()
 
-        df_final["Codigo"] = df_final["Codigo"].astype(str).str.strip().str.upper()
-        df_final["Bod"] = df_final["Bod"].astype(int)
-        df_final["CUENTA"] = ""
+    # ===============================
+    # NORMALIZAR COLUMNAS
+    # ===============================
 
-        # REGLA NOVEDAD
-        if "Fecha Novedad" in df_final.columns:
-            df_final["NOVEDAD_FINAL"] = df_final["Fecha Novedad"].apply(
-                lambda x: "AGOTADO" if pd.notna(x) else ""
-            )
+    df_final.columns = [
+        unicodedata.normalize('NFKD', col)
+        .encode('ascii', errors='ignore')
+        .decode('utf-8')
+        .strip()
+        .upper()
+        for col in df_final.columns
+    ]
 
-        # BODEGAS
-        dict_b1 = procesar_bodega(b1, 1) if b1 else {}
-        dict_b7 = procesar_bodega(b7, 7) if b7 else {}
-        dict_b5 = procesar_bodega(b5, 5) if b5 else {}
-        dict_b6 = procesar_bodega(b6, 6) if b6 else {}
+    # Detectar columnas clave
+    col_codigo = next((c for c in df_final.columns if "COD" in c), None)
+    col_bod = next((c for c in df_final.columns if "BOD" in c), None)
 
-        # ASIGNAR CUENTA
-        for i, row in df_final.iterrows():
-            bod = row["Bod"]
-            codigo = str(row["Codigo"]).strip().upper()
-            id_val = str(bod) + codigo
+    if col_codigo is None or col_bod is None:
+        st.error("No se encontraron columnas de Código o Bodega.")
+        st.write("Columnas detectadas:", df_final.columns.tolist())
+        st.stop()
 
-            if bod == 21:
-                df_final.at[i, "CUENTA"] = "EPM"
-            elif bod == 19:
-                df_final.at[i, "CUENTA"] = "UDEA"
-            elif bod == 16:
-                df_final.at[i, "CUENTA"] = "HMUA"
-            elif bod == 1:
-                df_final.at[i, "CUENTA"] = dict_b1.get(id_val, "")
-            elif bod == 7:
-                df_final.at[i, "CUENTA"] = dict_b7.get(id_val, "")
-            elif bod == 5:
-                df_final.at[i, "CUENTA"] = dict_b5.get(id_val, "")
-            elif bod == 6:
-                df_final.at[i, "CUENTA"] = dict_b6.get(id_val, "")
+    # Renombrar internamente
+    df_final.rename(columns={
+        col_codigo: "CODIGO",
+        col_bod: "BOD"
+    }, inplace=True)
 
-        # EXPORTAR
-        output = io.BytesIO()
-        df_final.to_excel(output, index=False)
-        output.seek(0)
+    df_final["CODIGO"] = df_final["CODIGO"].astype(str).str.strip().str.upper()
+    df_final["BOD"] = df_final["BOD"].astype(int)
+    df_final["CUENTA"] = ""
 
-        st.success("Proceso completado correctamente.")
+    # ===============================
+    # REGLA NOVEDAD
+    # ===============================
 
-        st.download_button(
-            label="Descargar Resultado Final",
-            data=output,
-            file_name="RESULTADO_FINAL.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    col_novedad = next((c for c in df_final.columns if "NOVED" in c), None)
+
+    if col_novedad:
+        df_final["NOVEDAD_FINAL"] = df_final[col_novedad].apply(
+            lambda x: "AGOTADO" if pd.notna(x) else ""
         )
+
+    # ===============================
+    # PROCESAR BODEGAS
+    # ===============================
+
+    dict_b1 = procesar_bodega(b1, 1) if b1 else {}
+    dict_b7 = procesar_bodega(b7, 7) if b7 else {}
+    dict_b5 = procesar_bodega(b5, 5) if b5 else {}
+    dict_b6 = procesar_bodega(b6, 6) if b6 else {}
+
+    # ===============================
+    # ASIGNAR CUENTA
+    # ===============================
+
+    for i, row in df_final.iterrows():
+        bod = row["BOD"]
+        codigo = row["CODIGO"]
+        id_val = str(bod) + codigo
+
+        if bod == 21:
+            df_final.at[i, "CUENTA"] = "EPM"
+        elif bod == 19:
+            df_final.at[i, "CUENTA"] = "UDEA"
+        elif bod == 16:
+            df_final.at[i, "CUENTA"] = "HMUA"
+        elif bod == 1:
+            df_final.at[i, "CUENTA"] = dict_b1.get(id_val, "")
+        elif bod == 7:
+            df_final.at[i, "CUENTA"] = dict_b7.get(id_val, "")
+        elif bod == 5:
+            df_final.at[i, "CUENTA"] = dict_b5.get(id_val, "")
+        elif bod == 6:
+            df_final.at[i, "CUENTA"] = dict_b6.get(id_val, "")
+
+    # ===============================
+    # EXPORTAR RESULTADO
+    # ===============================
+
+    output = io.BytesIO()
+    df_final.to_excel(output, index=False)
+    output.seek(0)
+
+    st.success("Proceso completado correctamente.")
+
+    st.download_button(
+        label="Descargar Resultado Final",
+        data=output,
+        file_name="RESULTADO_FINAL.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
