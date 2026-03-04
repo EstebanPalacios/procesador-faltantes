@@ -3,14 +3,13 @@ import pandas as pd
 import numpy as np
 import unicodedata
 import re
-from datetime import datetime
 import io
 
 st.set_page_config(page_title="Informe Faltantes Profesional", layout="wide")
 st.title("Procesador Oficial - Informe Faltantes + Cuenta")
 
 # =========================================================
-# FUNCIONES ORIGINALES (SIN ALTERAR TU LÓGICA)
+# FUNCIONES BASE
 # =========================================================
 
 def normalizar_texto(texto):
@@ -18,12 +17,10 @@ def normalizar_texto(texto):
         return texto
 
     texto = texto.strip().lower()
-
     texto = ''.join(
         c for c in unicodedata.normalize('NFD', texto)
         if unicodedata.category(c) != 'Mn'
     )
-
     texto = re.sub(r'[^a-z0-9 ]', '', texto)
     texto = re.sub(r'\s+', ' ', texto)
 
@@ -76,7 +73,7 @@ def calcular_tipo_novedad(df, columna_fecha):
 
 
 # =========================================================
-# LECTURA ROBUSTA
+# LECTURA
 # =========================================================
 
 def leer_archivo(file):
@@ -98,7 +95,7 @@ def leer_archivo(file):
 
 
 # =========================================================
-# PROCESO 1 - TRANSFORMACIÓN EXACTA
+# TRANSFORMACIÓN PRINCIPAL
 # =========================================================
 
 def transformar_informe(archivo_excel):
@@ -132,7 +129,10 @@ def transformar_informe(archivo_excel):
 
     df_nuevo = calcular_tipo_novedad(df_nuevo, "Fecha Novedad")
 
-    columnas_hist = ["ID", "abastecimiento", "dispensacion", "aliados", "responsable"]
+    if "cuenta" not in df_anterior.columns:
+        df_anterior["cuenta"] = ""
+
+    columnas_hist = ["ID", "abastecimiento", "dispensacion", "aliados", "responsable", "cuenta"]
     df_hist = df_anterior[columnas_hist].copy()
 
     df_final = df_nuevo.merge(df_hist, on="ID", how="left")
@@ -150,11 +150,11 @@ def transformar_informe(archivo_excel):
 
     df_final = df_final[columnas_finales]
 
-    return df_final
+    return df_final, df_hist
 
 
 # =========================================================
-# PROCESO 2 - CUENTA EXACTA
+# PROCESAR BODEGAS
 # =========================================================
 
 def limpiar_texto(texto):
@@ -173,6 +173,7 @@ def procesar_bodega(file, numero_bodega):
 
     df = leer_archivo(file)
 
+    df["Codigo"] = df["Codigo"].apply(limpiar_valor)
     df["Codigo"] = df["Codigo"].astype(str).str.strip().str.upper()
     df["Nombres"] = df["Nombres"].apply(limpiar_texto)
 
@@ -187,40 +188,52 @@ def procesar_bodega(file, numero_bodega):
     return dict(zip(consolidado["ID"], consolidado["Nombres"]))
 
 
-def asignar_cuenta(df_final, dict_b1, dict_b7, dict_b5, dict_b6):
+# =========================================================
+# ASIGNACIÓN DE CUENTA CON RESPALDO HISTÓRICO
+# =========================================================
+
+def asignar_cuenta(df_final, df_hist, dict_b1, dict_b7, dict_b5, dict_b6):
+
+    hist_dict = dict(zip(df_hist["ID"], df_hist["cuenta"]))
 
     for i, row in df_final.iterrows():
 
         bod = int(row["Bod"])
-
-        # 🔥 LIMPIEZA EXACTA COMO EN TU PRIMER BLOQUE
         codigo = limpiar_valor(row["Codigo"])
         codigo = str(codigo).strip().upper()
 
         id_val = str(bod) + codigo
+        cuenta = ""
 
         if bod == 21:
-            df_final.at[i, "CUENTA"] = "EPM"
+            cuenta = "EPM"
         elif bod == 19:
-            df_final.at[i, "CUENTA"] = "UDEA"
+            cuenta = "UDEA"
         elif bod == 16:
-            df_final.at[i, "CUENTA"] = "HMUA"
+            cuenta = "HMUA"
         elif bod == 1:
-            df_final.at[i, "CUENTA"] = dict_b1.get(id_val, "")
+            cuenta = dict_b1.get(id_val, "")
         elif bod == 7:
-            df_final.at[i, "CUENTA"] = dict_b7.get(id_val, "")
+            cuenta = dict_b7.get(id_val, "")
         elif bod == 5:
-            df_final.at[i, "CUENTA"] = dict_b5.get(id_val, "")
+            cuenta = dict_b5.get(id_val, "")
         elif bod == 6:
-            df_final.at[i, "CUENTA"] = dict_b6.get(id_val, "")
+            cuenta = dict_b6.get(id_val, "")
+
+        # 🔥 SI NO ENCUENTRA EN BODEGA → BUSCAR EN HISTÓRICO
+        if cuenta == "":
+            cuenta = hist_dict.get(id_val, "")
+
+        df_final.at[i, "CUENTA"] = cuenta
 
     return df_final
 
+
 # =========================================================
-# INTERFAZ STREAMLIT
+# INTERFAZ
 # =========================================================
 
-st.subheader("1️⃣ Cargar INFORME DE FALTANTES DISPENSACIÓN (con hojas NUEVO y ANTERIOR)")
+st.subheader("1️⃣ Cargar INFORME DE FALTANTES DISPENSACIÓN")
 archivo_principal = st.file_uploader("Informe principal", type=["xlsx"])
 
 st.subheader("2️⃣ Cargar Bodegas (Opcional)")
@@ -235,14 +248,17 @@ if st.button("PROCESAR INFORME COMPLETO"):
         st.error("Debe cargar el informe principal.")
         st.stop()
 
-    df_final = transformar_informe(archivo_principal)
+    df_final, df_hist = transformar_informe(archivo_principal)
 
     dict_b1 = procesar_bodega(b1, 1)
     dict_b7 = procesar_bodega(b7, 7)
     dict_b5 = procesar_bodega(b5, 5)
     dict_b6 = procesar_bodega(b6, 6)
 
-    df_final = asignar_cuenta(df_final, dict_b1, dict_b7, dict_b5, dict_b6)
+    df_final = asignar_cuenta(df_final, df_hist, dict_b1, dict_b7, dict_b5, dict_b6)
+
+    # 🔥 ELIMINAR REGISTROS COMPLETAMENTE IDÉNTICOS
+    df_final = df_final.drop_duplicates()
 
     output = io.BytesIO()
     df_final.to_excel(output, index=False)
