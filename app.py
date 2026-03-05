@@ -62,13 +62,29 @@ def calcular_tipo_novedad(df, columna_fecha):
     df.loc[df[columna_fecha] == pd.Timestamp("5000-01-01"), "Tipo Novedad"] = "Invima"
     df.loc[df[columna_fecha] == pd.Timestamp("01/01/3000"), "Tipo Novedad"] = "Descontinuado"
  
+  # 2️⃣ REGLA NUEVA → SI EL TEXTO DICE DESCONTINUADO
+    # -------------------------------------------------
+
+    # Buscar la palabra en cualquier columna de texto
+    columnas_texto = df.select_dtypes(include=["object"]).columns
+
+    mask_descontinuado = df[columnas_texto].apply(
+        lambda col: col.astype(str).str.contains("descontinuado", case=False, na=False)
+    ).any(axis=1)
+
+    df.loc[mask_descontinuado, "Tipo Novedad"] = "Descontinuado"
+
+    # -------------------------------------------------
+    # 3️⃣ SI HAY FECHA PERO NO SE CLASIFICÓ → AGOTADO
+    # -------------------------------------------------
+
     condicion_agotado = (
         df[columna_fecha].notna() &
         df["Tipo Novedad"].isna()
     )
- 
+
     df.loc[condicion_agotado, "Tipo Novedad"] = "Agotado"
- 
+
     return df
  
  
