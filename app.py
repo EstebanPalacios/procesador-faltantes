@@ -18,7 +18,6 @@ def normalizar_texto(texto):
         return texto
 
     texto = texto.strip().lower()
-
     texto = ''.join(
         c for c in unicodedata.normalize('NFD', texto)
         if unicodedata.category(c) != 'Mn'
@@ -52,42 +51,45 @@ def crear_id(df, col_bodega, col_codigo):
 
 
 # =========================================================
-# DETECTAR CELDAS GRISES EN EXCEL
+# DETECTAR CELDAS GRISES EN EXCEL (ANTES DE PANDAS)
 # =========================================================
 
-def detectar_filas_grises(archivo_excel):
+def detectar_grises_excel(file):
 
-    wb = load_workbook(archivo_excel, data_only=True)
+    wb = load_workbook(file, data_only=True)
     ws = wb["NUEVO"]
-
-    filas_grises = []
 
     headers = [cell.value for cell in ws[1]]
 
-    try:
-        col_index = headers.index("Fecha Novedad") + 1
-    except:
+    col_fecha = None
+
+    for i, h in enumerate(headers):
+        if h and str(h).strip().lower() == "fecha novedad":
+            col_fecha = i + 1
+            break
+
+    filas_grises = set()
+
+    if col_fecha is None:
         return filas_grises
 
-    colores_gris = [
-        "FFBFBFBF",
-        "FFD9D9D9",
-        "FF808080",
-        "FFC0C0C0"
-    ]
+    for row in range(2, ws.max_row + 1):
 
-    for fila in range(2, ws.max_row + 1):
+        cell = ws.cell(row=row, column=col_fecha)
 
-        celda = ws.cell(row=fila, column=col_index)
+        fill = cell.fill
 
-        fill = celda.fill
-        color = None
+        if fill and fill.start_color and fill.start_color.rgb:
 
-        if fill and fill.start_color:
             color = fill.start_color.rgb
 
-        if color in colores_gris:
-            filas_grises.append(fila - 2)
+            if color in [
+                "FF808080",
+                "FFC0C0C0",
+                "FFBFBFBF"
+            ]:
+
+                filas_grises.add(row - 2)
 
     return filas_grises
 
@@ -96,7 +98,7 @@ def detectar_filas_grises(archivo_excel):
 # CALCULAR TIPO NOVEDAD
 # =========================================================
 
-def calcular_tipo_novedad(df, columna_fecha):
+def calcular_tipo_novedad(df, columna_fecha, filas_grises):
 
     df[columna_fecha] = pd.to_datetime(
         df[columna_fecha],
@@ -110,6 +112,11 @@ def calcular_tipo_novedad(df, columna_fecha):
     df.loc[df[columna_fecha] == pd.Timestamp("5000-01-01"), "Tipo Novedad"] = "Invima"
     df.loc[df[columna_fecha] == pd.Timestamp("3000-01-01"), "Tipo Novedad"] = "Descontinuado"
 
+    # detectar gris
+    for idx in filas_grises:
+        if idx < len(df):
+            df.at[idx, "Tipo Novedad"] = "Descontinuado"
+
     condicion_agotado = (
         df[columna_fecha].notna() &
         df["Tipo Novedad"].isna()
@@ -121,7 +128,7 @@ def calcular_tipo_novedad(df, columna_fecha):
 
 
 # =========================================================
-# LECTURA ARCHIVOS
+# LECTURA
 # =========================================================
 
 def leer_archivo(file):
@@ -154,7 +161,7 @@ def leer_archivo(file):
 
 def transformar_informe(archivo_excel):
 
-    filas_grises = detectar_filas_grises(archivo_excel)
+    filas_grises = detectar_grises_excel(archivo_excel)
 
     df_nuevo = pd.read_excel(archivo_excel, sheet_name="NUEVO")
     df_anterior = pd.read_excel(archivo_excel, sheet_name="ANTERIOR")
@@ -183,11 +190,7 @@ def transformar_informe(archivo_excel):
 
     df_nuevo = df_nuevo.rename(columns=mapeo)
 
-    df_nuevo = calcular_tipo_novedad(df_nuevo, "Fecha Novedad")
-
-    # 🔥 MARCAR GRISES COMO DESCONTINUADO
-    if len(filas_grises) > 0:
-        df_nuevo.loc[filas_grises, "Tipo Novedad"] = "Descontinuado"
+    df_nuevo = calcular_tipo_novedad(df_nuevo, "Fecha Novedad", filas_grises)
 
     if "cuenta" not in df_anterior.columns:
         df_anterior["cuenta"] = ""
@@ -222,10 +225,11 @@ def transformar_informe(archivo_excel):
 
 
 # =========================================================
-# LIMPIAR TEXTO CUENTAS
+# PROCESAR BODEGAS
 # =========================================================
 
 def limpiar_texto(texto):
+
     if pd.isna(texto):
         return ""
 
@@ -235,10 +239,6 @@ def limpiar_texto(texto):
 
     return texto
 
-
-# =========================================================
-# PROCESAR BODEGAS
-# =========================================================
 
 def procesar_bodega(file, numero_bodega):
 
@@ -263,7 +263,7 @@ def procesar_bodega(file, numero_bodega):
 
 
 # =========================================================
-# ASIGNAR CUENTAS
+# ASIGNAR CUENTA
 # =========================================================
 
 def asignar_cuenta(df_final, df_hist, dict_b1, dict_b7, dict_b5, dict_b6):
@@ -337,7 +337,6 @@ if st.button("PROCESAR INFORME COMPLETO"):
 
     df_final = asignar_cuenta(df_final, df_hist, dict_b1, dict_b7, dict_b5, dict_b6)
 
-    # ELIMINAR DUPLICADOS EXACTOS
     df_final = df_final.drop_duplicates()
 
     output = io.BytesIO()
