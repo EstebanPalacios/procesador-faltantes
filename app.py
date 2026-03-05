@@ -47,37 +47,37 @@ def crear_id(df, col_bodega, col_codigo):
     df["ID"] = df[col_bodega] + df[col_codigo]
     return df
  
- 
 def calcular_tipo_novedad(df, columna_fecha):
- 
+
+    # Guardar valor original como texto
+    texto_original = df[columna_fecha].astype(str).str.lower()
+
+    # Convertir fecha
     df[columna_fecha] = pd.to_datetime(
         df[columna_fecha],
         dayfirst=True,
         errors="coerce"
     )
- 
+
     df["Tipo Novedad"] = np.nan
- 
+
+    # ------------------------------------------------
+    # 1️⃣ SI EL TEXTO DICE DESCONTINUADO
+    # ------------------------------------------------
+    mask_descontinuado_texto = texto_original.str.contains("descontinuado", na=False)
+
+    df.loc[mask_descontinuado_texto, "Tipo Novedad"] = "Descontinuado"
+
+    # ------------------------------------------------
+    # 2️⃣ REGLAS POR FECHA ESPECIAL
+    # ------------------------------------------------
     df.loc[df[columna_fecha] == pd.Timestamp("6000-01-01"), "Tipo Novedad"] = "Invima"
     df.loc[df[columna_fecha] == pd.Timestamp("5000-01-01"), "Tipo Novedad"] = "Invima"
-    df.loc[df[columna_fecha] == pd.Timestamp("01/01/3000"), "Tipo Novedad"] = "Descontinuado"
- 
-  # 2️⃣ REGLA NUEVA → SI EL TEXTO DICE DESCONTINUADO
-    # -------------------------------------------------
+    df.loc[df[columna_fecha] == pd.Timestamp("3000-01-01"), "Tipo Novedad"] = "Descontinuado"
 
-    # Buscar la palabra en cualquier columna de texto
-    columnas_texto = df.select_dtypes(include=["object"]).columns
-
-    mask_descontinuado = df[columnas_texto].apply(
-        lambda col: col.astype(str).str.contains("descontinuado", case=False, na=False)
-    ).any(axis=1)
-
-    df.loc[mask_descontinuado, "Tipo Novedad"] = "Descontinuado"
-
-    # -------------------------------------------------
-    # 3️⃣ SI HAY FECHA PERO NO SE CLASIFICÓ → AGOTADO
-    # -------------------------------------------------
-
+    # ------------------------------------------------
+    # 3️⃣ SI TIENE FECHA Y NO ES NADA → AGOTADO
+    # ------------------------------------------------
     condicion_agotado = (
         df[columna_fecha].notna() &
         df["Tipo Novedad"].isna()
@@ -86,7 +86,6 @@ def calcular_tipo_novedad(df, columna_fecha):
     df.loc[condicion_agotado, "Tipo Novedad"] = "Agotado"
 
     return df
- 
  
 # =========================================================
 # LECTURA
