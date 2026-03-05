@@ -4,6 +4,7 @@ import numpy as np
 import unicodedata
 import re
 import io
+from openpyxl import load_workbook
 
 st.set_page_config(page_title="Informe Faltantes Profesional", layout="wide")
 st.title("Procesador Informe de Faltantes de Dispensación")
@@ -17,10 +18,12 @@ def normalizar_texto(texto):
         return texto
 
     texto = texto.strip().lower()
+
     texto = ''.join(
         c for c in unicodedata.normalize('NFD', texto)
         if unicodedata.category(c) != 'Mn'
     )
+
     texto = re.sub(r'[^a-z0-9 ]', '', texto)
     texto = re.sub(r'\s+', ' ', texto)
 
@@ -48,6 +51,51 @@ def crear_id(df, col_bodega, col_codigo):
     return df
 
 
+# =========================================================
+# DETECTAR CELDAS GRISES EN EXCEL
+# =========================================================
+
+def detectar_filas_grises(archivo_excel):
+
+    wb = load_workbook(archivo_excel, data_only=True)
+    ws = wb["NUEVO"]
+
+    filas_grises = []
+
+    headers = [cell.value for cell in ws[1]]
+
+    try:
+        col_index = headers.index("Fecha Novedad") + 1
+    except:
+        return filas_grises
+
+    colores_gris = [
+        "FFBFBFBF",
+        "FFD9D9D9",
+        "FF808080",
+        "FFC0C0C0"
+    ]
+
+    for fila in range(2, ws.max_row + 1):
+
+        celda = ws.cell(row=fila, column=col_index)
+
+        fill = celda.fill
+        color = None
+
+        if fill and fill.start_color:
+            color = fill.start_color.rgb
+
+        if color in colores_gris:
+            filas_grises.append(fila - 2)
+
+    return filas_grises
+
+
+# =========================================================
+# CALCULAR TIPO NOVEDAD
+# =========================================================
+
 def calcular_tipo_novedad(df, columna_fecha):
 
     df[columna_fecha] = pd.to_datetime(
@@ -73,23 +121,29 @@ def calcular_tipo_novedad(df, columna_fecha):
 
 
 # =========================================================
-# LECTURA
+# LECTURA ARCHIVOS
 # =========================================================
 
 def leer_archivo(file):
     file.seek(0)
+
     if file.name.endswith(".xlsx"):
         return pd.read_excel(file, engine="openpyxl")
+
     elif file.name.endswith(".xls"):
         return pd.read_excel(file)
+
     elif file.name.endswith(".csv"):
+
         for encoding in ["utf-8", "latin1", "cp1252"]:
             try:
                 file.seek(0)
                 return pd.read_csv(file, encoding=encoding)
             except:
                 continue
+
         raise ValueError("No se pudo leer CSV.")
+
     else:
         raise ValueError("Formato no soportado.")
 
@@ -99,6 +153,8 @@ def leer_archivo(file):
 # =========================================================
 
 def transformar_informe(archivo_excel):
+
+    filas_grises = detectar_filas_grises(archivo_excel)
 
     df_nuevo = pd.read_excel(archivo_excel, sheet_name="NUEVO")
     df_anterior = pd.read_excel(archivo_excel, sheet_name="ANTERIOR")
@@ -129,10 +185,22 @@ def transformar_informe(archivo_excel):
 
     df_nuevo = calcular_tipo_novedad(df_nuevo, "Fecha Novedad")
 
+    # 🔥 MARCAR GRISES COMO DESCONTINUADO
+    if len(filas_grises) > 0:
+        df_nuevo.loc[filas_grises, "Tipo Novedad"] = "Descontinuado"
+
     if "cuenta" not in df_anterior.columns:
         df_anterior["cuenta"] = ""
 
-    columnas_hist = ["ID", "abastecimiento", "dispensacion", "aliados", "responsable", "cuenta"]
+    columnas_hist = [
+        "ID",
+        "abastecimiento",
+        "dispensacion",
+        "aliados",
+        "responsable",
+        "cuenta"
+    ]
+
     df_hist = df_anterior[columnas_hist].copy()
 
     df_final = df_nuevo.merge(df_hist, on="ID", how="left")
@@ -154,17 +222,23 @@ def transformar_informe(archivo_excel):
 
 
 # =========================================================
-# PROCESAR BODEGAS
+# LIMPIAR TEXTO CUENTAS
 # =========================================================
 
 def limpiar_texto(texto):
     if pd.isna(texto):
         return ""
+
     texto = str(texto).strip().upper()
     texto = unicodedata.normalize('NFKD', texto)
     texto = ''.join(c for c in texto if not unicodedata.combining(c))
+
     return texto
 
+
+# =========================================================
+# PROCESAR BODEGAS
+# =========================================================
 
 def procesar_bodega(file, numero_bodega):
 
@@ -189,7 +263,7 @@ def procesar_bodega(file, numero_bodega):
 
 
 # =========================================================
-# ASIGNACIÓN DE CUENTA CON RESPALDO HISTÓRICO
+# ASIGNAR CUENTAS
 # =========================================================
 
 def asignar_cuenta(df_final, df_hist, dict_b1, dict_b7, dict_b5, dict_b6):
@@ -203,24 +277,30 @@ def asignar_cuenta(df_final, df_hist, dict_b1, dict_b7, dict_b5, dict_b6):
         codigo = str(codigo).strip().upper()
 
         id_val = str(bod) + codigo
+
         cuenta = ""
 
         if bod == 21:
             cuenta = "EPM"
+
         elif bod == 19:
             cuenta = "UDEA"
+
         elif bod == 16:
             cuenta = "HMUA"
+
         elif bod == 1:
             cuenta = dict_b1.get(id_val, "")
+
         elif bod == 7:
             cuenta = dict_b7.get(id_val, "")
+
         elif bod == 5:
             cuenta = dict_b5.get(id_val, "")
+
         elif bod == 6:
             cuenta = dict_b6.get(id_val, "")
 
-        # 🔥 SI NO ENCUENTRA EN BODEGA → BUSCAR EN HISTÓRICO
         if cuenta == "":
             cuenta = hist_dict.get(id_val, "")
 
@@ -230,13 +310,13 @@ def asignar_cuenta(df_final, df_hist, dict_b1, dict_b7, dict_b5, dict_b6):
 
 
 # =========================================================
-# INTERFAZ
+# INTERFAZ STREAMLIT
 # =========================================================
 
 st.subheader("1️⃣ CARGAR INFORME DE FALTANTES DISPENSACIÓN")
 archivo_principal = st.file_uploader("Informe principal", type=["xlsx"])
 
-st.subheader("2️⃣ CARGAR PEDIDOS DE BODEGAS  (BUSQUEDA DE CUENTAS)")
+st.subheader("2️⃣ CARGAR PEDIDOS DE BODEGAS")
 b1 = st.file_uploader("Bodega 1", type=["xlsx","xls","csv"])
 b7 = st.file_uploader("Bodega 7", type=["xlsx","xls","csv"])
 b5 = st.file_uploader("Bodega 5", type=["xlsx","xls","csv"])
@@ -257,7 +337,7 @@ if st.button("PROCESAR INFORME COMPLETO"):
 
     df_final = asignar_cuenta(df_final, df_hist, dict_b1, dict_b7, dict_b5, dict_b6)
 
-    # 🔥 ELIMINAR REGISTROS COMPLETAMENTE IDÉNTICOS
+    # ELIMINAR DUPLICADOS EXACTOS
     df_final = df_final.drop_duplicates()
 
     output = io.BytesIO()
