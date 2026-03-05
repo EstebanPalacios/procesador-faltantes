@@ -60,7 +60,7 @@ def calcular_tipo_novedad(df, columna_fecha):
  
     df.loc[df[columna_fecha] == pd.Timestamp("6000-01-01"), "Tipo Novedad"] = "Invima"
     df.loc[df[columna_fecha] == pd.Timestamp("5000-01-01"), "Tipo Novedad"] = "Invima"
-    df.loc[df[columna_fecha] == pd.Timestamp("3000-01-01"), "Tipo Novedad"] = "Descontinuado"
+    df.loc[df[columna_fecha] == pd.Timestamp("01/01/3000"), "Tipo Novedad"] = "Descontinuado"
  
     condicion_agotado = (
         df[columna_fecha].notna() &
