@@ -6,7 +6,7 @@ import re
 import io
 
 st.set_page_config(page_title="Informe Faltantes Profesional", layout="wide")
-st.title("Procesador Oficial - Informe Faltantes + Cuenta")
+st.title("Procesador Informe de Faltantes de Dispensación")
 
 # =========================================================
 # FUNCIONES BASE
@@ -233,10 +233,10 @@ def asignar_cuenta(df_final, df_hist, dict_b1, dict_b7, dict_b5, dict_b6):
 # INTERFAZ
 # =========================================================
 
-st.subheader("1️⃣ Cargar INFORME DE FALTANTES DISPENSACIÓN")
+st.subheader("1️⃣ CARGAR INFORME DE FALTANTES DISPENSACIÓN")
 archivo_principal = st.file_uploader("Informe principal", type=["xlsx"])
 
-st.subheader("2️⃣ Cargar Bodegas (Opcional)")
+st.subheader("2️⃣ CARGAR PEDIDOS DE BODEGAS  (BUSQUEDA DE CUENTAS)")
 b1 = st.file_uploader("Bodega 1", type=["xlsx","xls","csv"])
 b7 = st.file_uploader("Bodega 7", type=["xlsx","xls","csv"])
 b5 = st.file_uploader("Bodega 5", type=["xlsx","xls","csv"])
