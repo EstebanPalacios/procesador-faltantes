@@ -5,100 +5,110 @@ import unicodedata
 import re
 import io
 import time
-from streamlit_lottie import st_lottie
-import requests
 
-# Configuración de página con estilo moderno
+# Configuración de alta gama
 st.set_page_config(
-    page_title="DataFlow | Procesador de Faltantes",
-    page_icon="🚀",
+    page_title="DataLogix Pro | Gestión de Dispensación",
+    page_icon="📊",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
-# --- FUNCIÓN PARA CARGAR ANIMACIONES ---
-def load_lottieurl(url: str):
-    r = requests.get(url)
-    if r.status_code != 200:
-        return None
-    return r.json()
-
-lottie_upload = load_lottieurl("https://assets5.lottiefiles.com/packages/lf20_v7bx9pva.json") # Animación de carga
-lottie_success = load_lottieurl("https://assets10.lottiefiles.com/packages/lf20_5tkzkblw.json") # Animación éxito
-
-# --- CSS PERSONALIZADO (EL "MÁGICO") ---
+# --- SISTEMA DE DISEÑO (CSS DE ALTO NIVEL) ---
 st.markdown("""
     <style>
-    /* Fondo y fuente */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
-    
+    /* Importar tipografía premium */
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
+
     html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
+        font-family: 'Outfit', sans-serif;
+        background-color: #FDFDFD;
     }
 
-    /* Estilo de los contenedores de carga */
-    .stFileUploader {
-        border: 2px dashed #4F46E5;
-        border-radius: 15px;
-        padding: 20px;
-        background-color: #f8fafc;
-        transition: all 0.3s ease;
+    /* Contenedor Principal de Módulos */
+    .module-card {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+        border: 1px solid #F0F0F0;
+        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     }
     
-    .stFileUploader:hover {
-        border-color: #818CF8;
-        background-color: #eff6ff;
-        transform: translateY(-2px);
+    .module-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(79, 70, 229, 0.08);
+        border-color: #E0E7FF;
     }
 
-    /* Botón principal estilo Glassmorphism */
+    /* Headers con estilo técnico */
+    .section-header {
+        color: #1E293B;
+        font-size: 0.9rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .section-header::before {
+        content: "";
+        width: 4px;
+        height: 18px;
+        background: #4F46E5;
+        border-radius: 10px;
+    }
+
+    /* Botón Maestro Moderno */
     .stButton>button {
         width: 100%;
-        border-radius: 12px;
-        height: 3em;
-        background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+        background: linear-gradient(135deg, #1E293B 0%, #334155 100%);
         color: white !important;
-        font-weight: bold;
+        border-radius: 12px;
+        padding: 20px;
+        font-weight: 600;
         border: none;
-        box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+        letter-spacing: 1px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         transition: all 0.3s ease;
     }
-    
+
     .stButton>button:hover {
-        transform: scale(1.02);
-        box-shadow: 0 6px 20px rgba(79, 70, 229, 0.6);
+        background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+        box-shadow: 0 15px 30px rgba(79, 70, 229, 0.3);
+        transform: scale(1.01);
     }
 
-    /* Títulos animados */
-    .main-title {
-        background: -webkit-linear-gradient(#4F46E5, #7C3AED);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-size: 3rem;
-        font-weight: 800;
-        text-align: center;
-        margin-bottom: 0px;
+    /* Estilización de los file uploaders */
+    .stFileUploader section {
+        background-color: #FAFAFA;
+        border: 1px dashed #CBD5E1 !important;
+        border-radius: 12px !important;
+    }
+
+    /* Sidebar Estilo Profesional */
+    [data-testid="stSidebar"] {
+        background-color: #F8FAFC;
+        border-right: 1px solid #E2E8F0;
     }
     
-    .sub-text {
-        color: #64748b;
-        text-align: center;
-        font-size: 1.1rem;
-        margin-bottom: 2rem;
-    }
-
-    /* Card de éxito */
-    .success-card {
-        padding: 20px;
-        border-radius: 15px;
-        background-color: #f0fdf4;
-        border-left: 5px solid #22c55e;
+    .status-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: #E0E7FF;
+        color: #4338CA;
     }
     </style>
     """, unsafe_allow_html=True)
 
 # =========================================================
-# LÓGICA DE PROCESAMIENTO (TU CÓDIGO ORIGINAL)
+# LÓGICA DE PROCESAMIENTO (Sólida y Profesional)
 # =========================================================
 
 def normalizar_texto(texto):
@@ -135,19 +145,27 @@ def calcular_tipo_novedad(df, columna_fecha):
 
 def leer_archivo(file):
     file.seek(0)
-    if file.name.endswith(".xlsx"): return pd.read_excel(file, engine="openpyxl")
-    elif file.name.endswith(".xls"): return pd.read_excel(file)
-    elif file.name.endswith(".csv"):
-        for encoding in ["utf-8", "latin1", "cp1252"]:
+    ext = file.name.split('.')[-1]
+    if ext == "xlsx": return pd.read_excel(file, engine="openpyxl")
+    elif ext == "xls": return pd.read_excel(file)
+    elif ext == "csv":
+        for enc in ["utf-8", "latin1", "cp1252"]:
             try:
                 file.seek(0)
-                return pd.read_csv(file, encoding=encoding)
+                return pd.read_csv(file, encoding=enc)
             except: continue
-    raise ValueError("Formato no soportado.")
+    return None
 
 def transformar_informe(archivo_excel):
+    # Carga con validación de hojas
+    xls = pd.ExcelFile(archivo_excel)
+    if "NUEVO" not in xls.sheet_names or "ANTERIOR" not in xls.sheet_names:
+        st.error("Error Crítico: El archivo debe contener las pestañas 'NUEVO' y 'ANTERIOR'.")
+        st.stop()
+        
     df_nuevo = pd.read_excel(archivo_excel, sheet_name="NUEVO")
     df_anterior = pd.read_excel(archivo_excel, sheet_name="ANTERIOR")
+    
     df_nuevo = normalizar_columnas(df_nuevo)
     df_anterior = normalizar_columnas(df_anterior)
     df_nuevo = crear_id(df_nuevo, "bodega", "codigo")
@@ -164,110 +182,136 @@ def transformar_informe(archivo_excel):
     df_nuevo = calcular_tipo_novedad(df_nuevo, "Fecha Novedad")
     
     if "cuenta" not in df_anterior.columns: df_anterior["cuenta"] = ""
-    columnas_hist = ["ID", "abastecimiento", "dispensacion", "aliados", "responsable", "cuenta"]
-    df_hist = df_anterior[columnas_hist].copy()
+    col_hist = ["ID", "abastecimiento", "dispensacion", "aliados", "responsable", "cuenta"]
+    df_hist = df_anterior[[c for c in col_hist if c in df_anterior.columns]].copy()
     
     df_final = df_nuevo.merge(df_hist, on="ID", how="left")
     df_final["CUENTA"] = ""
-    columnas_finales = [
+    
+    col_finales = [
         "ID","PRIORITARIO","Bod","Codigo","Fecha Novedad","Producto","Generico","División",
         "Planeador","Fecha Entrega Pedido","Numero Pedidos","Pendiente","Traslados",
         "Solicitud Traslados","Tipo Novedad","abastecimiento","dispensacion","aliados","CUENTA","responsable"
     ]
-    return df_final[columnas_finales], df_hist
+    # Asegurar que existan todas las columnas
+    for col in col_finales:
+        if col not in df_final.columns: df_final[col] = ""
+        
+    return df_final[col_finales], df_hist
 
-def procesar_bodega(file, numero_bodega):
+def procesar_bodega(file, num):
     if file is None: return {}
     df = leer_archivo(file)
+    if df is None or "Codigo" not in df.columns or "Nombres" not in df.columns: return {}
+    
     df["Codigo"] = df["Codigo"].apply(limpiar_valor).astype(str).str.strip().upper()
-    df["Nombres"] = df["Nombres"].apply(lambda x: str(x).strip().upper() if pd.notna(x) else "")
-    df["ID"] = str(numero_bodega) + df["Codigo"]
-    consolidado = df.groupby("ID")["Nombres"].apply(lambda x: ", ".join(sorted(set(x)))).reset_index()
-    return dict(zip(consolidado["ID"], consolidado["Nombres"]))
+    df["Nombres"] = df["Nombres"].fillna("").astype(str).str.strip().upper()
+    df["ID"] = str(num) + df["Codigo"]
+    
+    res = df.groupby("ID")["Nombres"].apply(lambda x: ", ".join(sorted(set(x)))).to_dict()
+    return res
 
-def asignar_cuenta(df_final, df_hist, dict_b1, dict_b7, dict_b5, dict_b6):
-    hist_dict = dict(zip(df_hist["ID"], df_hist["cuenta"]))
-    for i, row in df_final.iterrows():
-        bod = int(row["Bod"])
-        id_val = str(bod) + str(row["Codigo"]).strip().upper()
-        cuenta = ""
-        if bod == 21: cuenta = "EPM"
-        elif bod == 19: cuenta = "UDEA"
-        elif bod == 16: cuenta = "HMUA"
-        elif bod == 1: cuenta = dict_b1.get(id_val, "")
-        elif bod == 7: cuenta = dict_b7.get(id_val, "")
-        elif bod == 5: cuenta = dict_b5.get(id_val, "")
-        elif bod == 6: cuenta = dict_b6.get(id_val, "")
+# =========================================================
+# INTERFAZ DE USUARIO (EL LIENZO PRO)
+# =========================================================
+
+# --- SIDEBAR (PANEL DE CONTROL) ---
+with st.sidebar:
+    st.image("https://cdn-icons-png.flaticon.com/512/3652/3652191.png", width=80)
+    st.markdown("## **DataLogix Pro**")
+    st.markdown("---")
+    st.markdown("### **Estado del Sistema**")
+    st.markdown('<span class="status-badge">Núcleo Activo</span>', unsafe_allow_html=True)
+    st.markdown('<span class="status-badge">Motor Heurístico</span>', unsafe_allow_html=True)
+    st.markdown("---")
+    st.info("""
+    **Guía Rápida:**
+    1. Cargue el archivo matriz en el Módulo 1.
+    2. Adjunte los reportes de bodega correspondientes.
+    3. El sistema ejecutará el cruce de cuentas e históricos automáticamente.
+    """)
+
+# --- CUERPO PRINCIPAL ---
+st.markdown('<h1 style="color:#0F172A; font-weight:800; font-size:2.5rem; margin-bottom:5px;">Centro de Procesamiento</h1>', unsafe_allow_html=True)
+st.markdown('<p style="color:#64748B; font-size:1.1rem; margin-bottom:40px;">Consolidación Avanzada de Informes de Faltantes v3.1</p>', unsafe_allow_html=True)
+
+# Módulo 1: Archivo Maestro
+st.markdown('<div class="section-header">Módulo 01 | Archivo Maestro de Faltantes</div>', unsafe_allow_html=True)
+with st.container():
+    st.markdown('<div class="module-card">', unsafe_allow_html=True)
+    archivo_principal = st.file_uploader("Cargar Informe Principal (Debe contener hojas 'NUEVO' y 'ANTERIOR')", type=["xlsx"])
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# Módulo 2: Ingesta de Bodegas
+st.markdown('<div class="section-header" style="margin-top:40px;">Módulo 02 | Inteligencia de Bodegas (Lista de Cuentas)</div>', unsafe_allow_html=True)
+with st.container():
+    st.markdown('<div class="module-card">', unsafe_allow_html=True)
+    col_a, col_b = st.columns(2)
+    with col_a:
+        b1 = st.file_uploader("Bodega 1 - Principal", type=["xlsx","xls","csv"])
+        b7 = st.file_uploader("Bodega 7 - Satélite", type=["xlsx","xls","csv"])
+    with col_b:
+        b5 = st.file_uploader("Bodega 5 - Especializada", type=["xlsx","xls","csv"])
+        b6 = st.file_uploader("Bodega 6 - Regional", type=["xlsx","xls","csv"])
+    st.markdown('</div>', unsafe_allow_html=True)
+
+st.markdown('<div style="margin-top:50px;"></div>', unsafe_allow_html=True)
+
+# Acción Final
+if st.button("EJECUTAR PROCESAMIENTO ANALÍTICO"):
+    if archivo_principal is None:
+        st.warning("⚠️ Acción bloqueada: Se requiere el Informe Maestro para iniciar.")
+    else:
+        with st.status("Ejecutando algoritmos de limpieza y cruce...", expanded=True) as status:
+            st.write("📖 Analizando estructura de datos...")
+            df_final, df_hist = transformar_informe(archivo_principal)
+            
+            st.write("🔗 Mapeando identificadores de bodega...")
+            dict_b1 = procesar_bodega(b1, 1)
+            dict_b7 = procesar_bodega(b7, 7)
+            dict_b5 = procesar_bodega(b5, 5)
+            dict_b6 = procesar_bodega(b6, 6)
+            
+            st.write("🧪 Aplicando lógica de asignación de cuentas...")
+            hist_dict = dict(zip(df_hist["ID"], df_hist["cuenta"]))
+            
+            # Aplicar lógica final
+            for i, row in df_final.iterrows():
+                bod = int(row["Bod"])
+                id_val = str(bod) + str(row["Codigo"]).strip().upper()
+                cuenta = ""
+                
+                # Reglas directas
+                if bod == 21: cuenta = "EPM"
+                elif bod == 19: cuenta = "UDEA"
+                elif bod == 16: cuenta = "HMUA"
+                elif bod == 1: cuenta = dict_b1.get(id_val, "")
+                elif bod == 7: cuenta = dict_b7.get(id_val, "")
+                elif bod == 5: cuenta = dict_b5.get(id_val, "")
+                elif bod == 6: cuenta = dict_b6.get(id_val, "")
+                
+                if not cuenta: cuenta = hist_dict.get(id_val, "")
+                df_final.at[i, "CUENTA"] = cuenta
+
+            df_final = df_final.drop_duplicates()
+            status.update(label="✅ Procesamiento Finalizado", state="complete")
+
+        # Resultado Visual
+        st.balloons()
         
-        if not cuenta: cuenta = hist_dict.get(id_val, "")
-        df_final.at[i, "CUENTA"] = cuenta
-    return df_final
-
-# =========================================================
-# INTERFAZ DE USUARIO (EL NUEVO LOOK)
-# =========================================================
-
-st.markdown('<p class="main-title">DataFlow Pro</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-text">Inteligencia de Datos para Gestión de Dispensación</p>', unsafe_allow_html=True)
-
-# Layout de columnas para organizar el espacio
-col1, col2 = st.columns([1, 1], gap="large")
-
-with col1:
-    st.markdown("### 📄 Informe Base")
-    archivo_principal = st.file_uploader("Arrastra aquí el reporte principal (.xlsx)", type=["xlsx"], key="main")
-    if lottie_upload:
-        st_lottie(lottie_upload, height=150, key="anim_upload")
-
-with col2:
-    st.markdown("### 📦 Pedidos de Bodegas")
-    # Usamos pestañas para limpiar la UI
-    tab1, tab2, tab3, tab4 = st.tabs(["Bodega 1", "Bodega 7", "Bodega 5", "Bodega 6"])
-    with tab1: b1 = st.file_uploader("Cargar B1", type=["xlsx","xls","csv"], key="b1")
-    with tab2: b7 = st.file_uploader("Cargar B7", type=["xlsx","xls","csv"], key="b7")
-    with tab3: b5 = st.file_uploader("Cargar B5", type=["xlsx","xls","csv"], key="b5")
-    with tab4: b6 = st.file_uploader("Cargar B6", type=["xlsx","xls","csv"], key="b6")
-
-st.markdown("---")
-
-# Botón de Procesar centrado
-c1, c2, c3 = st.columns([1, 2, 1])
-with c2:
-    if st.button("🚀 PROCESAR Y GENERAR INFORME"):
-        if archivo_principal is None:
-            st.error("⚠️ Por favor, sube el informe principal antes de continuar.")
-        else:
-            with st.spinner('Analizando datos y cruzando cuentas...'):
-                # Simular un poco de tiempo para la experiencia de usuario
-                time.sleep(1)
-                
-                df_final, df_hist = transformar_informe(archivo_principal)
-                dict_b1 = procesar_bodega(b1, 1)
-                dict_b7 = procesar_bodega(b7, 7)
-                dict_b5 = procesar_bodega(b5, 5)
-                dict_b6 = procesar_bodega(b6, 6)
-                
-                df_final = asignar_cuenta(df_final, df_hist, dict_b1, dict_b7, dict_b5, dict_b6)
-                df_final = df_final.drop_duplicates()
-                
-                # Preparar descarga
-                output = io.BytesIO()
-                with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                    df_final.to_excel(writer, index=False)
-                output.seek(0)
-                
-                # Mostrar éxito
-                st.balloons()
-                st.markdown("""
-                    <div class="success-card">
-                        <h3>✅ ¡Proceso Exitoso!</h3>
-                        <p>Se han consolidado todas las cuentas y novedades correctamente.</p>
-                    </div>
-                """, unsafe_allow_html=True)
-                
-                st.download_button(
-                    label="📥 DESCARGAR RESULTADO FINAL",
-                    data=output,
-                    file_name="INFORME_CONSOLIDADO_PRO.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
+        # Generar Excel en memoria
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df_final.to_excel(writer, index=False)
+        output.seek(0)
+        
+        st.success("### Generación Exitosa")
+        st.markdown(f"Se han procesado **{len(df_final)}** registros con éxito.")
+        
+        st.download_button(
+            label="📥 DESCARGAR INFORME CONSOLIDADO (XLSX)",
+            data=output,
+            file_name="CONSOLIDADO_FALTANTES_PRO.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
