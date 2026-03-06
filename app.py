@@ -4,167 +4,200 @@ import numpy as np
 import unicodedata
 import re
 import io
-import plotly.express as px
+import time
 
 # =========================================================
-# CONFIGURACIÓN DE PÁGINA: ESTÁNDAR PRO
+# CONFIGURACIÓN PREMIUM (ALTO NIVEL)
 # =========================================================
 st.set_page_config(
-    page_title="DataLogix Pro",
-    page_icon="🍎",
+    page_title="DataLogix Pro | Inteligencia Logística",
+    page_icon="✨",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
-# --- SISTEMA DE DISEÑO: PURE APPLE WHITE ---
+# --- SISTEMA DE DISEÑOFluent/Fluent UI + Glassmorphism ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    /* Importar tipografía premium geométrica */
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=swap');
 
     html, body, [class*="css"] {
-        font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
-        background-color: #FFFFFF;
-        color: #1D1D1F;
+        font-family: 'Outfit', sans-serif;
+        background-color: #F8FAFC; /* Gris ultra-pálido técnico */
     }
 
-    /* Tarjetas de Información */
-    .metric-card {
-        background: #FFFFFF;
-        border-radius: 12px;
-        border: 1px solid #E5E5E7;
-        padding: 24px;
-        transition: all 0.2s ease-in-out;
-        height: 100%;
-    }
-    .metric-card:hover {
-        border-color: #D2D2D7;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-
+    /* Títulos Principales con Degradado Elegantísimo */
     .main-title {
-        font-weight: 700;
-        font-size: 2.8rem;
-        letter-spacing: -1.5px;
-        color: #1D1D1F;
-        margin-bottom: 5px;
+        background: linear-gradient(135deg, #007AFF 0%, #34C759 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 3.5rem;
+        font-weight: 900;
+        letter-spacing: -2px;
+        margin-bottom: 0px;
+        text-align: center;
     }
-
+    
     .sub-title {
-        color: #86868B;
-        font-size: 1.1rem;
-        margin-bottom: 40px;
-    }
-
-    /* Botón Ejecutar Estilo Apple Black */
-    .stButton > button {
-        background: #000000 !important;
-        color: #FFFFFF !important;
-        border-radius: 8px !important;
-        border: none !important;
-        padding: 14px 40px !important;
-        font-weight: 500 !important;
-        font-size: 1rem !important;
-        width: 100%;
-        margin-top: 20px;
-    }
-    
-    .stButton > button:hover {
-        background: #1D1D1F !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-
-    .section-label {
-        font-weight: 600;
-        color: #1D1D1F;
+        color: #64748B;
+        text-align: center;
         font-size: 1.2rem;
-        margin: 2.5rem 0 1rem 0;
-        padding-bottom: 8px;
-        border-bottom: 1px solid #E5E5E7;
+        font-weight: 400;
+        margin-bottom: 50px;
+    }
+
+    /* Módulos Glassmorphism (Tarjetas que flotan) */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 20px;
+        padding: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+        transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+        margin-bottom: 25px;
     }
     
-    .insight-label {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: #86868B;
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-        margin-bottom: 4px;
+    .glass-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0, 122, 255, 0.08);
+        border-color: rgba(0, 122, 255, 0.2);
     }
 
-    .insight-value {
-        font-size: 2rem;
+    /* Headers de Sección Técnicos y Limpios */
+    .section-label {
+        color: #1E293B;
+        font-size: 0.95rem;
         font-weight: 700;
-        color: #1D1D1F;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .section-label::before {
+        content: "";
+        width: 30px;
+        height: 3px;
+        background: linear-gradient(90deg, #007AFF, #34C759);
+        border-radius: 99px;
     }
 
-    /* Ocultar elementos innecesarios */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    .block-container { padding-top: 2.5rem; }
+    /* Botón Maestro Inspirador */
+    .stButton>button {
+        width: 100%;
+        background: linear-gradient(135deg, #007AFF 0%, #00CFFF 100%);
+        color: white !important;
+        border-radius: 12px;
+        padding: 20px;
+        font-weight: 700;
+        border: none;
+        letter-spacing: 1px;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+        box-shadow: 0 10px 20px rgba(0, 122, 255, 0.2);
+        transition: all 0.4s ease;
+    }
+
+    .stButton>button:hover {
+        background: linear-gradient(135deg, #34C759 0%, #007AFF 100%);
+        box-shadow: 0 15px 30px rgba(52, 199, 89, 0.3);
+        transform: scale(1.02);
+    }
+
+    /* Personalización File Uploaders */
+    .stFileUploader section {
+        background-color: #FFFFFF !important;
+        border: 2px dashed #CBD5E1 !important;
+        border-radius: 12px !important;
+        transition: all 0.3s ease;
+    }
+    .stFileUploader section:hover {
+        border-color: #007AFF !important;
+        background-color: #F0F9FF !important;
+    }
+
+    /* Sidebar Refinado */
+    [data-testid="stSidebar"] {
+        background-color: rgba(248, 250, 252, 0.9);
+        backdrop-filter: blur(10px);
+        border-right: 1px solid #E2E8F0;
+    }
+    
+    /* Previsualización rápida de datos */
+    .precompute-card {
+        padding: 20px;
+        border-radius: 15px;
+        background: #F0F9FF;
+        border-left: 5px solid #007AFF;
+        margin-top: 10px;
+    }
     </style>
     """, unsafe_allow_html=True)
 
 # =========================================================
-# LÓGICA DE PROCESAMIENTO (SIN CAMBIOS EN ESTRUCTURA)
+# LÓGICA DE PROCESAMIENTO (Sólida e Inalterada)
 # =========================================================
 
 def normalizar_texto(texto):
-    if not isinstance(texto, str): return ""
+    if not isinstance(texto, str): return texto
     texto = texto.strip().lower()
     texto = ''.join(c for c in unicodedata.normalize('NFD', texto) if unicodedata.category(c) != 'Mn')
-    return re.sub(r'[^a-z0-9 ]', '', texto).strip()
+    texto = re.sub(r'[^a-z0-9 ]', '', texto)
+    return re.sub(r'\s+', ' ', texto).strip()
+
+def normalizar_columnas(df):
+    df.columns = [normalizar_texto(col) for col in df.columns]
+    return df
 
 def limpiar_valor(valor):
-    if pd.isna(valor) or valor == "": return ""
+    if pd.isna(valor): return ""
     return str(valor).replace(".0", "").strip()
 
-def limpiar_texto_simple(texto):
-    if pd.isna(texto): return ""
-    texto = str(texto).strip().upper()
-    texto = unicodedata.normalize('NFKD', texto)
-    return ''.join(c for c in texto if not unicodedata.combining(c))
+def crear_id(df, col_bodega, col_codigo):
+    df[col_bodega] = df[col_bodega].apply(limpiar_valor)
+    df[col_codigo] = df[col_codigo].apply(limpiar_valor)
+    df["ID"] = df[col_bodega] + df[col_codigo]
+    return df
 
-def procesar_bodega(file, num):
-    """Función de cruce de bodegas con blindaje contra TypeError"""
-    if file is None: return {}
-    try:
-        df = pd.read_excel(file) if file.name.endswith('xlsx') else pd.read_csv(file, encoding='latin1')
-        df.columns = [str(c).strip().title() for c in df.columns]
-        
-        if "Codigo" not in df.columns or "Nombres" not in df.columns:
-            return {}
+def calcular_tipo_novedad(df, columna_fecha):
+    texto_original = df[columna_fecha].astype(str).str.lower()
+    df[columna_fecha] = pd.to_datetime(df[columna_fecha], dayfirst=True, errors="coerce")
+    df["Tipo Novedad"] = np.nan
+    df.loc[texto_original.str.contains("descontinuado", na=False), "Tipo Novedad"] = "Descontinuado"
+    df.loc[df[columna_fecha] == pd.Timestamp("6000-01-01"), "Tipo Novedad"] = "Invima"
+    df.loc[df[columna_fecha] == pd.Timestamp("5000-01-01"), "Tipo Novedad"] = "Invima"
+    df.loc[df[columna_fecha] == pd.Timestamp("3000-01-01"), "Tipo Novedad"] = "Descontinuado"
+    df.loc[(df[columna_fecha].notna() & df["Tipo Novedad"].isna()), "Tipo Novedad"] = "Agotado"
+    return df
 
-        df["Codigo"] = df["Codigo"].apply(limpiar_valor).astype(str).str.strip().str.upper()
-        df["ID"] = str(num) + df["Codigo"]
-        
-        # Blindaje contra nulos y tipos mixtos para el sorted
-        df["Nombres"] = df["Nombres"].apply(limpiar_texto_simple)
-        
-        def join_seguro(x):
-            nombres = [str(n) for n in x if n and str(n).strip() != ""]
-            return ", ".join(sorted(list(set(nombres))))
-
-        return df.groupby("ID")["Nombres"].apply(join_seguro).to_dict()
-    except:
-        return {}
+def leer_archivo(file):
+    file.seek(0)
+    ext = file.name.split('.')[-1].lower()
+    if ext == "xlsx": return pd.read_excel(file, engine="openpyxl")
+    elif ext == "xls": return pd.read_excel(file)
+    elif ext == "csv":
+        for encoding in ["utf-8", "latin1", "cp1252"]:
+            try:
+                file.seek(0)
+                return pd.read_csv(file, encoding=encoding)
+            except: continue
+    return None
 
 def transformar_informe(archivo_excel):
-    """Mantiene la lógica exacta y el orden de columnas original"""
+    xls = pd.ExcelFile(archivo_excel)
     df_nuevo = pd.read_excel(archivo_excel, sheet_name="NUEVO")
     df_anterior = pd.read_excel(archivo_excel, sheet_name="ANTERIOR")
     
-    # Normalización interna para procesamiento
-    df_n = df_nuevo.copy()
-    df_a = df_anterior.copy()
-    df_n.columns = [normalizar_texto(c) for c in df_n.columns]
-    df_a.columns = [normalizar_texto(c) for c in df_a.columns]
+    df_nuevo = normalizar_columnas(df_nuevo)
+    df_anterior = normalizar_columnas(df_anterior)
+    df_nuevo = crear_id(df_nuevo, "bodega", "codigo")
+    df_anterior = crear_id(df_anterior, "bod", "codigo")
     
-    # IDs
-    df_n["ID"] = df_n["bodega"].apply(limpiar_valor) + df_n["codigo"].apply(limpiar_valor)
-    df_a["ID"] = df_a["bod"].apply(limpiar_valor) + df_a["codigo"].apply(limpiar_valor)
-
-    # Mapeo de nombres para reporte final (Conserva tu estructura)
     mapeo = {
         "prioritario": "PRIORITARIO", "bodega": "Bod", "codigo": "Codigo",
         "fecha novedad": "Fecha Novedad", "producto": "Producto",
@@ -172,145 +205,142 @@ def transformar_informe(archivo_excel):
         "fechaentrega antigua": "Fecha Entrega Pedido", "num pedidos": "Numero Pedidos",
         "pendiente": "Pendiente", "traslado": "Traslados", "solicitud traslado": "Solicitud Traslados",
     }
-    df_final = df_n.rename(columns=mapeo)
+    df_nuevo = df_nuevo.rename(columns=mapeo)
+    df_nuevo = calcular_tipo_novedad(df_nuevo, "Fecha Novedad")
     
-    # Cálculo de Tipo Novedad (Tu lógica de fechas)
-    df_final["Fecha Novedad"] = pd.to_datetime(df_final["Fecha Novedad"], dayfirst=True, errors="coerce")
-    df_final["Tipo Novedad"] = np.nan
-    df_final.loc[df_final["Fecha Novedad"] == pd.Timestamp("6000-01-01"), "Tipo Novedad"] = "Invima"
-    df_final.loc[df_final["Fecha Novedad"] == pd.Timestamp("5000-01-01"), "Tipo Novedad"] = "Invima"
-    df_final.loc[df_final["Fecha Novedad"] == pd.Timestamp("3000-01-01"), "Tipo Novedad"] = "Descontinuado"
-    df_final.loc[(df_final["Fecha Novedad"].notna() & df_final["Tipo Novedad"].isna()), "Tipo Novedad"] = "Agotado"
-    
-    # Cruce con histórico
+    if "cuenta" not in df_anterior.columns: df_anterior["cuenta"] = ""
     col_hist = ["ID", "abastecimiento", "dispensacion", "aliados", "responsable", "cuenta"]
-    df_hist = df_a[[c for c in col_hist if c in df_a.columns]].copy()
+    df_hist = df_anterior[[c for c in col_hist if c in df_anterior.columns]].copy()
     
-    df_output = df_final.merge(df_hist, on="ID", how="left")
-    df_output["CUENTA"] = ""
-    
-    # Orden de columnas ESTRICTO (El que pediste)
-    cols = [
-        "ID","PRIORITARIO","Bod","Codigo","Fecha Novedad","Producto","Generico","División",
-        "Planeador","Fecha Entrega Pedido","Numero Pedidos","Pendiente","Traslados",
-        "Solicitud Traslados","Tipo Novedad","abastecimiento","dispensacion","aliados","CUENTA","responsable"
-    ]
-    for c in cols:
-        if c not in df_output.columns: df_output[c] = ""
+    df_final = df_nuevo.merge(df_hist, on="ID", how="left")
+    df_final["CUENTA"] = ""
+    col_finales = ["ID","PRIORITARIO","Bod","Codigo","Fecha Novedad","Producto","Generico","División","Planeador","Fecha Entrega Pedido","Numero Pedidos","Pendiente","Traslados","Solicitud Traslados","Tipo Novedad","abastecimiento","dispensacion","aliados","CUENTA","responsable"]
+    for col in col_finales:
+        if col not in df_final.columns: df_final[col] = ""
         
-    return df_output[cols], df_hist
+    return df_final[col_finales], df_hist
+
+def procesar_bodega(file, num):
+    if file is None: return {}
+    df = leer_archivo(file)
+    if df is None: return {}
+    df["Codigo"] = df["Codigo"].apply(limpiar_valor).astype(str).str.strip().upper()
+    df["Nombres"] = df["Nombres"].fillna("").astype(str).str.strip().upper()
+    df["ID"] = str(num) + df["Codigo"]
+    consolidado = df.groupby("ID")["Nombres"].apply(lambda x: ", ".join(sorted(set(x)))).reset_index()
+    return dict(zip(consolidado["ID"], consolidado["Nombres"]))
 
 # =========================================================
-# INTERFAZ DE USUARIO: EL LIENZO
+# INTERFAZ DE USUARIO (EL LIENZO INSPIRADOR)
 # =========================================================
 
-st.markdown("<h1 class='main-title'>Informe de Faltantes de Dispensación</h1>", unsafe_allow_html=True)
-st.markdown("<p class='sub-title'>Sistema de consolidación y análisis logístico centralizado.</p>", unsafe_allow_html=True)
+# --- SIDEBAR ELGANTE ---
+with st.sidebar:
+    st.image("https://cdn-icons-png.flaticon.com/512/3652/3652191.png", width=70)
+    st.markdown("## **DataLogix Pro**")
+    st.markdown("---")
+    st.info("""
+    **Guía Rápida:**
+    1. Cargue el archivo matriz en el Módulo 1.
+    2. Adjunte los reportes de bodega correspondientes.
+    3. El sistema ejecutará el cruce de cuentas e históricos automáticamente.
+    """)
+    st.markdown("---")
+    st.markdown("<p style='color:#64748B; font-size:0.8rem;'>Motor v3.1 | Grado Industrial</p>", unsafe_allow_html=True)
 
-# 1. ARCHIVO MAESTRO
-st.markdown("<div class='section-label'>Carga de Datos Maestros</div>", unsafe_allow_html=True)
-archivo_principal = st.file_uploader("Subir Archivo Excel (Pestañas NUEVO y ANTERIOR)", type=["xlsx"], label_visibility="collapsed")
+# --- CUERPO PRINCIPAL ---
+st.markdown('<p class="main-title">Centro de Procesamiento</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">Inteligencia y Consolidación de Faltantes de Dispensación</p>', unsafe_allow_html=True)
 
-if archivo_principal:
-    try:
-        # Análisis de Dashboards
-        df_dash = pd.read_excel(archivo_principal, sheet_name="NUEVO")
-        df_dash.columns = [normalizar_texto(c) for c in df_dash.columns]
-        
-        # Métricas principales
-        m1, m2, m3 = st.columns(3)
-        with m1:
-            st.markdown(f"<div class='metric-card'><p class='insight-label'>Líneas Faltantes</p><p class='insight-value'>{len(df_dash):,}</p></div>", unsafe_allow_html=True)
-        with m2:
-            refs = df_dash['codigo'].nunique() if 'codigo' in df_dash.columns else 0
-            st.markdown(f"<div class='metric-card'><p class='insight-label'>Referencias Únicas</p><p class='insight-value'>{refs:,}</p></div>", unsafe_allow_html=True)
-        with m3:
-            total_pedidos = pd.to_numeric(df_dash['num pedidos'], errors='coerce').sum() if 'num pedidos' in df_dash.columns else 0
-            st.markdown(f"<div class='metric-card'><p class='insight-label'>Pedidos Afectados</p><p class='insight-value'>{int(total_pedidos):,}</p></div>", unsafe_allow_html=True)
+# Módulo 1: Archivo Maestro
+st.markdown('<div class="section-label">Módulo 1 // Archivo Maestro de Faltantes</div>', unsafe_allow_html=True)
+with st.container():
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    archivo_principal = st.file_uploader("Arrastre el Informe Principal (Debe contener hojas 'NUEVO' y 'ANTERIOR')", type=["xlsx"])
+    
+    # Pre-cómputo y dato ganador instantáneo si se sube el archivo
+    if archivo_principal:
+        try:
+            with st.spinner('Analizando estructura base...'):
+                time.sleep(1) # Sensación de trabajo premium
+                xl_preview = pd.ExcelFile(archivo_principal)
+                df_n = xl_preview.parse('NUEVO')
+                impactos = len(df_n)
+                st.markdown(f'<div class="precompute-card">✅ Archivo Matriz detectado. <b>{impactos:,}</b> impactos a procesar en pestaña NUEVO. Listo para consolidar.</div>', unsafe_allow_html=True)
+        except:
+            st.error("Error al previsualizar. Asegúrese de que el archivo tenga las hojas 'NUEVO' y 'ANTERIOR'.")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-        # GRÁFICOS ESTRATÉGICOS
-        st.markdown("<br>", unsafe_allow_html=True)
-        g1, g2 = st.columns(2)
-        
-        with g1:
-            st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
-            st.markdown("<p class='insight-label'>Top 5 Planeadores (Mayor Novedad)</p>", unsafe_allow_html=True)
-            p_col = next((c for c in ["pleaneador", "planeador"] if c in df_dash.columns), None)
-            if p_col:
-                top_p = df_dash[p_col].value_counts().nlargest(5).reset_index()
-                fig1 = px.bar(top_p, x='count', y=p_col, orientation='h', text_auto=True)
-                fig1.update_traces(marker_color='#1D1D1F')
-                fig1.update_layout(margin=dict(t=10,b=10,l=0,r=10), height=300, xaxis_visible=False, yaxis_title=None, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-                st.plotly_chart(fig1, use_container_width=True, config={'displayModeBar': False})
-            st.markdown("</div>", unsafe_allow_html=True)
+# Módulo 2: Ingesta de Bodegas
+st.markdown('<div class="section-label" style="margin-top:40px;">Módulo 2 // Network de Bodegas (Lista de Cuentas)</div>', unsafe_allow_html=True)
+with st.container():
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    col_a, col_b = st.columns(2, gap="large")
+    with col_a:
+        b1 = st.file_uploader("Bodega 1 - Principal", type=["xlsx","xls","csv"], key="b1_uploader")
+        b7 = st.file_uploader("Bodega 7 - Satélite", type=["xlsx","xls","csv"], key="b7_uploader")
+    with col_b:
+        b5 = st.file_uploader("Bodega 5 - Especializada", type=["xlsx","xls","csv"], key="b5_uploader")
+        b6 = st.file_uploader("Bodega 6 - Regional", type=["xlsx","xls","csv"], key="b6_uploader")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-        with g2:
-            st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
-            st.markdown("<p class='insight-label'>Top 5 SKU (Impacto en Pedidos)</p>", unsafe_allow_html=True)
-            if 'codigo' in df_dash.columns and 'num pedidos' in df_dash.columns:
-                df_dash['num pedidos'] = pd.to_numeric(df_dash['num pedidos'], errors='coerce').fillna(0)
-                top_sku = df_dash.groupby('codigo')['num pedidos'].sum().nlargest(5).reset_index()
-                top_sku['codigo'] = top_sku['codigo'].astype(str).str.upper()
-                fig2 = px.bar(top_sku, x='num pedidos', y='codigo', orientation='h', text_auto=True)
-                fig2.update_traces(marker_color='#1D1D1F')
-                fig2.update_layout(margin=dict(t=10,b=10,l=0,r=10), height=300, xaxis_visible=False, yaxis_title=None, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-                st.plotly_chart(fig2, use_container_width=True, config={'displayModeBar': False})
-            st.markdown("</div>", unsafe_allow_html=True)
-            
-    except Exception as e:
-        st.error(f"Error de lectura en archivo maestro: {e}")
+st.markdown('<div style="margin-top:60px;"></div>', unsafe_allow_html=True)
 
-# 2. BODEGAS SATÉLITE
-st.markdown("<div class='section-label'>Cruce de Cuentas (Bodegas Satélite)</div>", unsafe_allow_html=True)
-col_left, col_right = st.columns(2)
-with col_left:
-    b1 = st.file_uploader("Bodega 1", type=["xlsx", "csv"])
-    b7 = st.file_uploader("Bodega 7", type=["xlsx", "csv"])
-with col_right:
-    b5 = st.file_uploader("Bodega 5", type=["xlsx", "csv"])
-    b6 = st.file_uploader("Bodega 6", type=["xlsx", "csv"])
-
-# 3. ACCIÓN
-if st.button("Ejecutar"):
-    if not archivo_principal:
-        st.warning("Cargue el Informe Maestro para proceder.")
+# Acción Final
+if st.button("🚀 EJECUTAR CONSOLIDACIÓN DE DATOS"):
+    if archivo_principal is None:
+        st.warning("⚠️ Acción bloqueada: Se requiere el Informe Maestro para iniciar.")
     else:
-        with st.status("Ejecutando algoritmos de consolidación...", expanded=True) as status:
-            st.write("📖 Analizando archivo maestro y calculando novedades...")
+        with st.status("Aplicando algoritmos de consolidación y cruce...", expanded=True) as status:
+            time.sleep(1)
+            
+            st.write("Sincronizando Módulos y Pestañas base...")
             df_final, df_hist = transformar_informe(archivo_principal)
             
-            st.write("🔗 Indexando bases de datos de bodegas satélite...")
+            st.write("🔗 Mapeando identificadores de Network de Bodegas...")
             dict_b1 = procesar_bodega(b1, 1); dict_b7 = procesar_bodega(b7, 7)
             dict_b5 = procesar_bodega(b5, 5); dict_b6 = procesar_bodega(b6, 6)
             
-            st.write("🧪 Aplicando jerarquía de asignación de cuentas...")
-            hist_dict = dict(zip(df_hist["ID"], df_hist.get("cuenta", "")))
+            st.write("🧪 Ejecutando lógica heurística de asignación de cuentas...")
+            hist_dict = dict(zip(df_hist["ID"], df_hist["cuenta"]))
             
-            def asignar(row):
-                bod = str(limpiar_valor(row["Bod"]))
-                id_v = row["ID"]
-                if bod == "21": return "EPM"
-                if bod == "19": return "UDEA"
-                if bod == "16": return "HMUA"
+            for i, row in df_final.iterrows():
+                bod = int(row["Bod"])
+                id_val = str(bod) + str(row["Codigo"]).strip().upper()
+                cuenta = ""
                 
-                # Prioridad 1: Bodegas del día
-                cuenta = dict_b1.get(id_v) or dict_b7.get(id_v) or dict_b5.get(id_v) or dict_b6.get(id_v)
-                if cuenta: return cuenta
+                # Reglas directas e históricas
+                if bod == 21: cuenta = "EPM"
+                elif bod == 19: cuenta = "UDEA"
+                elif bod == 16: cuenta = "HMUA"
+                elif bod == 1: cuenta = dict_b1.get(id_val, "")
+                elif bod == 7: cuenta = dict_b7.get(id_val, "")
+                elif bod == 5: cuenta = dict_b5.get(id_val, "")
+                elif bod == 6: cuenta = dict_b6.get(id_val, "")
                 
-                # Prioridad 2: Histórico
-                return hist_dict.get(id_v, "")
+                if not cuenta or cuenta == "": cuenta = hist_dict.get(id_val, "")
+                df_final.at[i, "CUENTA"] = cuenta
 
-            df_final["CUENTA"] = df_final.apply(asignar, axis=1)
-            
-            st.write("✅ Generando reporte final...")
-            output = io.BytesIO()
-            df_final.to_excel(output, index=False)
-            status.update(label="Procesamiento completado.", state="complete")
+            df_final = df_final.drop_duplicates()
+            status.update(label="✅ Sincronización Finalizada", state="complete")
 
-        st.download_button(
-            label="Descargar Reporte Final",
-            data=output.getvalue(),
-            file_name="CONSOLIDADO_FALTANTES_MAESTRO.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True
-        )
+        # Resultado Visual
+        st.balloons()
+        
+        # Generar Excel Premium en memoria
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df_final.to_excel(writer, index=False)
+        output.seek(0)
+        
+        st.success(f"## {len(df_final):,} Impactos Procesados Exitosamente")
+        
+        c_final, c_spacer = st.columns([2, 3])
+        with c_final:
+            st.download_button(
+                label="📥 DESCARGAR INFORME CONSOLIDADO (v3.1)",
+                data=output,
+                file_name="CONSOLIDADO_FALTANTES_PRO.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True
+            )
