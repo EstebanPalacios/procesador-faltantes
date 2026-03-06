@@ -225,11 +225,55 @@ def transformar_informe(archivo_excel):
 def procesar_bodega(file, num):
     if file is None: return {}
     df = leer_archivo(file)
-    if df is None or "Codigo" not in df.columns or "Nombres" not in df.columns: return {}
-    df["Codigo"] = df["Codigo"].apply(limpiar_valor).astype(str).str.strip().upper()
-    df["Nombres"] = df["Nombres"].fillna("").astype(str).str.strip().upper()
-    df["ID"] = str(num) + df["Codigo"]
-    return df.groupby("ID")["Nombres"].apply(lambda x: ", ".join(sorted(set(x)))).to_dict()
+    
+    # --- MEJORA PRO: Normalización de columnas de bodega ---
+    if df is not None:
+        df = normalizar_columnas(df) # Esto convierte "Código" o "CODIGO" en "codigo"
+        
+        # Verificamos los nombres normalizados
+        col_cod = "codigo" 
+        col_nom = "nombres"
+        
+        if col_cod not in df.columns or col_nom not in df.columns:
+            # Si no encuentra las columnas, intentamos buscarlas por aproximación
+            # (Útil si el archivo de bodega cambia de formato)
+            st.warning(f"⚠️ La Bodega {num} no tiene el formato estándar (Columnas esperadas: Codigo, Nombres)")
+            return {}
+            
+        # Procesamiento ultra-seguro
+        df[col_cod] = df[col_cod].astype(str).apply(limpiar_valor).str.strip().upper()
+        df[col_nom] = df[col_nom].fillna("").astype(str).str.strip().upper()
+        df["ID"] = str(num) + df[col_cod]
+        
+        return df.groupby("ID")[col_nom].apply(lambda x: ", ".join(sorted(set(x)))).to_dict()
+    
+    return {}
+
+# --- DATO GANADOR EXTRA: Contador de Novedades ---
+# (Agrégalo en la sección de extraer_metricas_rapidas)
+def extraer_metricas_rapidas(archivo):
+    try:
+        df_preview = pd.read_excel(archivo, sheet_name="NUEVO")
+        df_preview = normalizar_columnas(df_preview)
+        
+        impactos = len(df_preview)
+        
+        # Producto más crítico
+        col_prod = "producto" if "producto" in df_preview.columns else None
+        top_producto = df_preview[col_prod].value_counts().idxmax() if col_prod and not df_preview[col_prod].empty else "N/D"
+        refs_unicas = df_preview[col_prod].nunique() if col_prod else 0
+        
+        # DATO GANADOR: Porcentaje de Agotados vs Otros
+        df_preview = calcular_tipo_novedad(df_preview, "fecha novedad" if "fecha novedad" in df_preview.columns else "fecha_novedad")
+        agotados_count = len(df_preview[df_preview["Tipo Novedad"] == "Agotado"])
+        porcentaje_agotado = f"{(agotados_count / impactos * 100):.1f}%" if impactos > 0 else "0%"
+        
+        col_plan = "pleaneador" if "pleaneador" in df_preview.columns else ("planeador" if "planeador" in df_preview.columns else None)
+        top_planeador = df_preview[col_plan].value_counts().idxmax() if col_plan and not df_preview[col_plan].empty else "N/D"
+        
+        return impactos, refs_unicas, str(top_producto).title(), porcentaje_agotado
+    except:
+        return 0, 0, "Error", "0%"
 
 # =========================================================
 # INTERFAZ DE USUARIO (EL LIENZO INSPIRADOR)
