@@ -133,7 +133,7 @@ def procesar_bodega(file, num):
 # INTERFAZ DE USUARIO
 # =========================================================
 
-st.markdown('<p class="main-title">DataLogix Intelligence</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-title">Informe Faltantes de Dispensación</p>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title">Consolidación Avanzada & Visualización de Impacto</p>', unsafe_allow_html=True)
 
 # 1. CARGA Y VISUALIZACIÓN
