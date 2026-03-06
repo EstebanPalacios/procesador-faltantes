@@ -133,11 +133,11 @@ def procesar_bodega(file, num):
 # INTERFAZ DE USUARIO
 # =========================================================
 
-st.markdown('<p class="main-title">Informe Faltantes de Dispensación</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Consolidación Avanzada & Visualización de Impacto</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-title">Informe   Faltantes   de   Dispensación</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">Consolidación & Visualización de Impacto</p>', unsafe_allow_html=True)
 
 # 1. CARGA Y VISUALIZACIÓN
-st.markdown('<div class="section-label">01 // Análisis de Archivo Maestro</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-label">01 // INFORME DE FALTANTES DISPENSACIÓN </div>', unsafe_allow_html=True)
 archivo_principal = st.file_uploader("Subir Informe Maestro (.xlsx)", type=["xlsx"], label_visibility="collapsed")
 
 if archivo_principal:
@@ -188,7 +188,7 @@ if archivo_principal:
         st.markdown('</div>', unsafe_allow_html=True)
 
 # 2. BODEGAS
-st.markdown('<div class="section-label">02 // Network de Bodegas (Opcional)</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-label">02 // Pedidos de Bodegas (Opcional/ Cuentas Afectadas)</div>', unsafe_allow_html=True)
 with st.container():
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
     bl, br = st.columns(2)
@@ -201,7 +201,7 @@ with st.container():
     st.markdown('</div>', unsafe_allow_html=True)
 
 # 3. EJECUCIÓN
-if st.button("🚀 PROCESAR INFORME COMPLETO"):
+if st.button("🚀 PROCESAR INFORME"):
     if not archivo_principal:
         st.error("Falta el archivo maestro.")
     else:
@@ -242,4 +242,4 @@ if st.button("🚀 PROCESAR INFORME COMPLETO"):
             output = io.BytesIO()
             df_nuevo.to_excel(output, index=False)
             st.success("¡Informe consolidado listo!")
-            st.download_button("📥 Descargar Reporte Final", output.getvalue(), "Consolidado_DataLogix.xlsx", use_container_width=True)
+            st.download_button("📥 Descargar Reporte", output.getvalue(), "Consolidado_DataLogix.xlsx", use_container_width=True)
