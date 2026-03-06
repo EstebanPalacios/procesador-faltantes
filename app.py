@@ -6,120 +6,120 @@ import re
 import io
 
 # =========================================================
-# CONFIGURACIÓN DE PÁGINA (ESTILO BRUTALISTA)
+# CONFIGURACIÓN DE PÁGINA (ESTILO PREMIUM)
 # =========================================================
 st.set_page_config(
-    page_title="DATALOGIX | Core",
-    page_icon="⬛",
+    page_title="DataLogix | Inteligencia Logística",
+    page_icon="✨",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- SISTEMA DE DISEÑO INSPIRADO EN MATTELSA ---
+# --- SISTEMA DE DISEÑO ESTILO APPLE / AI MODERNA ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;700;900&display=swap');
+    /* Tipografía limpia y moderna (Inter imita el estilo San Francisco de Apple) */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-    /* Reset y Variables */
     html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
-        background-color: #FFFFFF;
-        color: #000000;
+        font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+        background-color: #F5F5F7; /* Fondo sutilmente gris de Apple */
+        color: #1D1D1F; /* Gris oscuro para menor fatiga visual */
     }
 
-    /* Tipografía Pesada (Headers) */
-    h1, h2, h3 {
-        font-family: 'Archivo Black', sans-serif !important;
-        text-transform: uppercase;
-        letter-spacing: -1.5px;
-        color: #000000;
+    /* Títulos con gradientes elegantes */
+    .gradient-text {
+        background: linear-gradient(135deg, #007AFF 0%, #34C759 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 700;
+        font-size: 2.8rem;
+        margin-bottom: 0px;
+        letter-spacing: -1px;
+    }
+    .sub-title {
+        color: #86868B;
+        font-size: 1.1rem;
+        font-weight: 400;
+        margin-bottom: 30px;
     }
 
-    /* Líneas separadoras industriales */
-    hr {
-        border: 0;
-        border-top: 4px solid #000000;
-        margin: 2rem 0;
+    /* Efecto Glassmorphism para las tarjetas de métricas */
+    .apple-card {
+        background: rgba(255, 255, 255, 0.65);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+        padding: 24px;
+        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        height: 100%;
+    }
+    .apple-card:hover {
+        box-shadow: 0 15px 35px rgba(0, 122, 255, 0.1);
+        transform: translateY(-4px);
+        background: rgba(255, 255, 255, 0.9);
     }
 
-    /* Estilo de los Uploaders (Cajas sólidas) */
+    .metric-icon { font-size: 1.8rem; margin-bottom: 12px; }
+    .metric-title { font-size: 0.85rem; color: #86868B; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;}
+    .metric-value { font-size: 2rem; font-weight: 700; color: #1D1D1F; margin: 8px 0; }
+    .metric-sub { font-size: 0.8rem; color: #007AFF; font-weight: 500; }
+
+    /* Contenedores de carga amigables */
     [data-testid="stFileUploader"] {
-        border: 3px solid #000000 !important;
-        background-color: #F8F8F8 !important;
+        border: 2px dashed #D2D2D7 !important;
+        border-radius: 16px !important;
+        background-color: #FFFFFF !important;
         padding: 1.5rem !important;
-        border-radius: 0px !important;
-        transition: 0.2s;
+        transition: all 0.3s ease;
     }
     [data-testid="stFileUploader"]:hover {
-        background-color: #000000 !important;
-    }
-    [data-testid="stFileUploader"]:hover * {
-        color: #FFFFFF !important;
+        border-color: #007AFF !important;
+        background-color: #F4F9FF !important;
     }
 
-    /* Botones Brutalistas */
+    /* Botones vibrantes y redondeados */
     [data-testid="baseButton-secondary"] {
-        background-color: #000000 !important;
+        background: linear-gradient(180deg, #007AFF 0%, #0066CC 100%) !important;
         color: #FFFFFF !important;
+        border-radius: 999px !important; /* Totalmente redondeado */
         border: none !important;
-        border-radius: 0px !important;
-        font-family: 'Archivo Black', sans-serif !important;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        padding: 1.5rem !important;
-        font-size: 1.2rem !important;
+        padding: 16px 32px !important;
+        font-weight: 600 !important;
+        font-size: 1.1rem !important;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 14px rgba(0, 122, 255, 0.3);
         width: 100%;
-        transition: all 0.2s ease;
     }
     [data-testid="baseButton-secondary"]:hover {
-        background-color: #FF3E00 !important; /* Acento Naranja Mattelsa */
-        transform: translate(-4px, -4px);
-        box-shadow: 4px 4px 0px 0px #000000;
+        transform: scale(1.02);
+        box-shadow: 0 6px 20px rgba(0, 122, 255, 0.5);
     }
 
-    /* Sidebar minimalista */
+    /* Sidebar limpio */
     [data-testid="stSidebar"] {
-        background-color: #F4F4F4;
-        border-right: 4px solid #000000;
+        background-color: rgba(245, 245, 247, 0.8);
+        backdrop-filter: blur(20px);
+        border-right: 1px solid #E5E5EA;
     }
-
-    /* Tarjetas de Métricas (HTML Custom) */
-    .brutal-metric {
-        border: 3px solid #000000;
-        background-color: #FFFFFF;
-        padding: 20px;
-        text-align: left;
-        margin-bottom: 20px;
-        box-shadow: 6px 6px 0px 0px #000000;
-    }
-    .brutal-metric-title {
-        font-size: 0.8rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        color: #666666;
-        margin-bottom: 5px;
-    }
-    .brutal-metric-value {
-        font-family: 'Archivo Black', sans-serif;
-        font-size: 2.2rem;
-        line-height: 1;
-        color: #000000;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .brutal-metric-sub {
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: #FF3E00;
-        margin-top: 5px;
-        text-transform: uppercase;
+    
+    .section-label {
+        font-weight: 600;
+        color: #1D1D1F;
+        font-size: 1.2rem;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
     </style>
     """, unsafe_allow_html=True)
 
 # =========================================================
-# MOTOR LÓGICO
+# MOTOR LÓGICO Y DE EXTRACCIÓN
 # =========================================================
 
 def normalizar_texto(texto):
@@ -168,25 +168,23 @@ def leer_archivo(file):
     return None
 
 def extraer_metricas_rapidas(archivo):
-    """Extrae datos vitales para mostrar antes de procesar"""
+    """Extrae datos vitales premium para el panel de control"""
     try:
         df_preview = pd.read_excel(archivo, sheet_name="NUEVO")
         df_preview = normalizar_columnas(df_preview)
         
         impactos = len(df_preview)
         
-        # Buscar el producto más repetido (manejando variaciones de nombre de columna)
         col_prod = "producto" if "producto" in df_preview.columns else None
         top_producto = df_preview[col_prod].value_counts().idxmax() if col_prod and not df_preview[col_prod].empty else "N/D"
+        refs_unicas = df_preview[col_prod].nunique() if col_prod else 0
         
-        # Buscar el planeador más afectado
         col_plan = "pleaneador" if "pleaneador" in df_preview.columns else ("planeador" if "planeador" in df_preview.columns else None)
         top_planeador = df_preview[col_plan].value_counts().idxmax() if col_plan and not df_preview[col_plan].empty else "N/D"
-        lineas_planeador = df_preview[col_plan].value_counts().max() if col_plan else 0
         
-        return impactos, str(top_producto).title(), str(top_planeador).title(), lineas_planeador
+        return impactos, refs_unicas, str(top_producto).title(), str(top_planeador).title()
     except Exception as e:
-        return 0, "Error de lectura", "Error de lectura", 0
+        return 0, 0, "Error", "Error"
 
 def transformar_informe(archivo_excel):
     df_nuevo = pd.read_excel(archivo_excel, sheet_name="NUEVO")
@@ -234,127 +232,133 @@ def procesar_bodega(file, num):
     return df.groupby("ID")["Nombres"].apply(lambda x: ", ".join(sorted(set(x)))).to_dict()
 
 # =========================================================
-# INTERFAZ DE USUARIO (EL LIENZO BRUTALISTA)
+# INTERFAZ DE USUARIO (EL LIENZO INSPIRADOR)
 # =========================================================
 
 # --- SIDEBAR ---
 with st.sidebar:
-    st.markdown("<h1>DATALOGIX</h1>", unsafe_allow_html=True)
-    st.markdown("<b>v3.1 // CORE ENGINE</b>", unsafe_allow_html=True)
-    st.markdown("<hr>", unsafe_allow_html=True)
-    st.markdown("### STATUS")
-    st.markdown("🟢 ONLINE")
-    st.markdown("### PROTOCOLO")
-    st.write("1. INGESTA DE MAESTRO")
-    st.write("2. LECTURA DE MÉTRICAS")
-    st.write("3. MAPEO DE BODEGAS")
-    st.write("4. EJECUCIÓN TOTAL")
+    st.image("https://cdn-icons-png.flaticon.com/512/3652/3652191.png", width=60)
+    st.markdown("<h2 style='font-weight:700; color:#1D1D1F; margin-top:10px;'>DataLogix</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#86868B;'>Versión 3.2 • Entorno Inteligente</p>", unsafe_allow_html=True)
+    st.markdown("---")
+    st.markdown("### 💡 Tip Pro")
+    st.info("Sube primero el informe principal. El sistema detectará automáticamente las métricas clave antes de que tengas que cruzar las bodegas.")
 
 # --- MAIN ---
-st.markdown("<h1>CENTRO DE MANDO</h1>", unsafe_allow_html=True)
-st.write("PROCESADOR DE FALTANTES / ALTO RENDIMIENTO")
-st.markdown("<hr>", unsafe_allow_html=True)
+st.markdown("<div class='gradient-text'>Procesador de Faltantes</div>", unsafe_allow_html=True)
+st.markdown("<div class='sub-title'>Consolida, cruza y analiza la dispensación en segundos.</div>", unsafe_allow_html=True)
 
-# BLOQUE 1: INGESTA
-st.markdown("<h3>01. INGESTA MAESTRA</h3>", unsafe_allow_html=True)
-archivo_principal = st.file_uploader("CARGAR INFORME PRINCIPAL (.XLSX)", type=["xlsx"])
+# BLOQUE 1: INGESTA MAESTRA
+st.markdown("<div class='section-label'>📄 1. Informe Principal</div>", unsafe_allow_html=True)
+archivo_principal = st.file_uploader("Arrastra tu reporte de faltantes (.xlsx)", type=["xlsx"])
 
-# SI SE SUBE EL ARCHIVO -> MOSTRAR MÉTRICAS INMEDIATAMENTE
+# ANÁLISIS PRELIMINAR (MAGIA VISUAL)
 if archivo_principal is not None:
-    # Mostramos un spinner técnico mientras lee
-    with st.spinner("ANALIZANDO ESTRUCTURA..."):
-        impactos, top_prod, top_plan, lineas_plan = extraer_metricas_rapidas(archivo_principal)
+    with st.spinner("Extrayendo insights inteligentes..."):
+        impactos, refs_unicas, top_prod, top_plan = extraer_metricas_rapidas(archivo_principal)
     
-    st.markdown("<h3>📊 ANÁLISIS PRELIMINAR</h3>", unsafe_allow_html=True)
+    st.markdown("<div class='section-label'>✨ Análisis Preliminar</div>", unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.markdown(f"""
-        <div class="brutal-metric">
-            <div class="brutal-metric-title">TOTAL IMPACTOS (LÍNEAS)</div>
-            <div class="brutal-metric-value">{impactos}</div>
-            <div class="brutal-metric-sub">REGISTROS IDENTIFICADOS</div>
+        <div class="apple-card">
+            <div class="metric-icon">🎯</div>
+            <div class="metric-title">Total Impactos</div>
+            <div class="metric-value">{impactos}</div>
+            <div class="metric-sub">Líneas de registro</div>
         </div>
         """, unsafe_allow_html=True)
     with col2:
         st.markdown(f"""
-        <div class="brutal-metric">
-            <div class="brutal-metric-title">PRODUCTO MÁS CRÍTICO</div>
-            <div class="brutal-metric-value" style="font-size: 1.5rem;" title="{top_prod}">{top_prod[:20]}...</div>
-            <div class="brutal-metric-sub">MAYOR FRECUENCIA</div>
+        <div class="apple-card">
+            <div class="metric-icon">📦</div>
+            <div class="metric-title">Ref. Únicas</div>
+            <div class="metric-value">{refs_unicas}</div>
+            <div class="metric-sub">Productos distintos</div>
         </div>
         """, unsafe_allow_html=True)
     with col3:
         st.markdown(f"""
-        <div class="brutal-metric">
-            <div class="brutal-metric-title">PLANEADOR MÁS IMPACTADO</div>
-            <div class="brutal-metric-value" style="font-size: 1.5rem;">{top_plan[:15]}</div>
-            <div class="brutal-metric-sub">{lineas_plan} LÍNEAS ASIGNADAS</div>
+        <div class="apple-card">
+            <div class="metric-icon">⚠️</div>
+            <div class="metric-title">Mayor Impacto</div>
+            <div class="metric-value" style="font-size: 1.3rem; margin-top: 15px;" title="{top_prod}">{top_prod[:20]}...</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col4:
+        st.markdown(f"""
+        <div class="apple-card">
+            <div class="metric-icon">👤</div>
+            <div class="metric-title">Planeador Top</div>
+            <div class="metric-value" style="font-size: 1.5rem; margin-top: 12px;">{top_plan[:15]}</div>
         </div>
         """, unsafe_allow_html=True)
 
-st.markdown("<hr>", unsafe_allow_html=True)
-
 # BLOQUE 2: BODEGAS
-st.markdown("<h3>02. MAPEO DE BODEGAS</h3>", unsafe_allow_html=True)
+st.markdown("<div class='section-label'>🏢 2. Red de Bodegas</div>", unsafe_allow_html=True)
+st.markdown("<p style='color:#86868B; font-size:0.9rem;'>Carga los reportes satélites para iniciar el cruce de cuentas.</p>", unsafe_allow_html=True)
+
 col_a, col_b = st.columns(2)
 with col_a:
-    b1 = st.file_uploader("BODEGA 1", type=["xlsx","xls","csv"])
-    b7 = st.file_uploader("BODEGA 7", type=["xlsx","xls","csv"])
+    b1 = st.file_uploader("Bodega 1 (Central)", type=["xlsx","xls","csv"])
+    b7 = st.file_uploader("Bodega 7 (Satélite)", type=["xlsx","xls","csv"])
 with col_b:
-    b5 = st.file_uploader("BODEGA 5", type=["xlsx","xls","csv"])
-    b6 = st.file_uploader("BODEGA 6", type=["xlsx","xls","csv"])
+    b5 = st.file_uploader("Bodega 5 (Especializada)", type=["xlsx","xls","csv"])
+    b6 = st.file_uploader("Bodega 6 (Regional)", type=["xlsx","xls","csv"])
 
-st.markdown("<hr>", unsafe_allow_html=True)
+st.markdown("<br><br>", unsafe_allow_html=True)
 
 # BLOQUE 3: EJECUCIÓN
-if st.button("INICIAR PROCESAMIENTO CORE"):
-    if archivo_principal is None:
-        st.error("ERROR FATAL: REQUIERE INFORME MAESTRO.")
-    else:
-        with st.status("EJECUTANDO ALGORITMOS...", expanded=True) as status:
-            st.write(">> TRANSFORMANDO INFORME BASE...")
-            df_final, df_hist = transformar_informe(archivo_principal)
-            
-            st.write(">> INDEXANDO BODEGAS...")
-            dict_b1 = procesar_bodega(b1, 1)
-            dict_b7 = procesar_bodega(b7, 7)
-            dict_b5 = procesar_bodega(b5, 5)
-            dict_b6 = procesar_bodega(b6, 6)
-            
-            st.write(">> CRUZANDO CUENTAS E HISTÓRICOS...")
-            hist_dict = dict(zip(df_hist["ID"], df_hist["cuenta"]))
-            
-            for i, row in df_final.iterrows():
-                bod = int(row["Bod"])
-                id_val = str(bod) + str(row["Codigo"]).strip().upper()
-                cuenta = ""
+c1, c2, c3 = st.columns([1, 2, 1])
+with c2:
+    if st.button("Generar Consolidado Inteligente"):
+        if archivo_principal is None:
+            st.error("Por favor, sube el informe principal para continuar.")
+        else:
+            with st.status("Procesando datos con el motor heurístico...", expanded=True) as status:
+                st.write("Estructurando y limpiando datos base...")
+                df_final, df_hist = transformar_informe(archivo_principal)
                 
-                if bod == 21: cuenta = "EPM"
-                elif bod == 19: cuenta = "UDEA"
-                elif bod == 16: cuenta = "HMUA"
-                elif bod == 1: cuenta = dict_b1.get(id_val, "")
-                elif bod == 7: cuenta = dict_b7.get(id_val, "")
-                elif bod == 5: cuenta = dict_b5.get(id_val, "")
-                elif bod == 6: cuenta = dict_b6.get(id_val, "")
+                st.write("Mapeando y cruzando inventarios de bodegas...")
+                dict_b1 = procesar_bodega(b1, 1)
+                dict_b7 = procesar_bodega(b7, 7)
+                dict_b5 = procesar_bodega(b5, 5)
+                dict_b6 = procesar_bodega(b6, 6)
                 
-                if not cuenta: cuenta = hist_dict.get(id_val, "")
-                df_final.at[i, "CUENTA"] = cuenta
+                st.write("Asignando cuentas e históricos...")
+                hist_dict = dict(zip(df_hist["ID"], df_hist["cuenta"]))
+                
+                for i, row in df_final.iterrows():
+                    bod = int(row["Bod"])
+                    id_val = str(bod) + str(row["Codigo"]).strip().upper()
+                    cuenta = ""
+                    
+                    if bod == 21: cuenta = "EPM"
+                    elif bod == 19: cuenta = "UDEA"
+                    elif bod == 16: cuenta = "HMUA"
+                    elif bod == 1: cuenta = dict_b1.get(id_val, "")
+                    elif bod == 7: cuenta = dict_b7.get(id_val, "")
+                    elif bod == 5: cuenta = dict_b5.get(id_val, "")
+                    elif bod == 6: cuenta = dict_b6.get(id_val, "")
+                    
+                    if not cuenta: cuenta = hist_dict.get(id_val, "")
+                    df_final.at[i, "CUENTA"] = cuenta
 
-            df_final = df_final.drop_duplicates()
-            status.update(label="OPERACIÓN COMPLETADA", state="complete")
+                df_final = df_final.drop_duplicates()
+                status.update(label="Procesamiento completado con éxito", state="complete")
 
-        # Generar Excel
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df_final.to_excel(writer, index=False)
-        output.seek(0)
-        
-        st.markdown("<h3>✅ PROCESO EXITOSO</h3>", unsafe_allow_html=True)
-        
-        st.download_button(
-            label="DESCARGAR DATA CONSOLIDADA (.XLSX)",
-            data=output,
-            file_name="CONSOLIDADO_FALTANTES_PRO.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+            output = io.BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                df_final.to_excel(writer, index=False)
+            output.seek(0)
+            
+            st.balloons()
+            st.markdown("<h3 style='text-align:center; color:#34C759; margin-top:20px;'>¡Reporte Listo!</h3>", unsafe_allow_html=True)
+            
+            st.download_button(
+                label="Descargar Reporte Final (.xlsx)",
+                data=output,
+                file_name="DataLogix_Consolidado_Pro.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
