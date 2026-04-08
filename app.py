@@ -49,26 +49,41 @@ def crear_id(df, col_bodega, col_codigo):
  
  
 def calcular_tipo_novedad(df, columna_fecha):
- 
+    # 1. Guardar el texto original antes de convertir a fecha
+    # Esto evita errores si la celda contiene palabras como "Descontinuado"
+    texto_original = df[columna_fecha].astype(str).str.lower()
+
+    # 2. Convertir la columna de fecha a formato Datetime de Pandas
     df[columna_fecha] = pd.to_datetime(
         df[columna_fecha],
         dayfirst=True,
         errors="coerce"
     )
- 
-    df["Tipo Novedad"] = np.nan
- 
+
+    # 3. SOLUCIÓN AL ERROR: Crear la columna como tipo 'object' (texto) desde el inicio
+    # Usamos None en lugar de np.nan para que sea compatible con strings
+    df["Tipo Novedad"] = None
+    df["Tipo Novedad"] = df["Tipo Novedad"].astype(object)
+
+    # --- APLICACIÓN DE REGLAS ---
+
+    # Regla A: Si el texto original decía "descontinuado"
+    mask_descontinuado_texto = texto_original.str.contains("descontinuado", na=False)
+    df.loc[mask_descontinuado_texto, "Tipo Novedad"] = "Descontinuado"
+
+    # Regla B: Fechas especiales (Invima y Descontinuados antiguos)
     df.loc[df[columna_fecha] == pd.Timestamp("6000-01-01"), "Tipo Novedad"] = "Invima"
     df.loc[df[columna_fecha] == pd.Timestamp("5000-01-01"), "Tipo Novedad"] = "Invima"
     df.loc[df[columna_fecha] == pd.Timestamp("3000-01-01"), "Tipo Novedad"] = "Descontinuado"
- 
+
+    # Regla C: Si tiene fecha válida pero ninguna de las anteriores -> "Agotado"
+    # Usamos .isna() porque definimos la columna con None/NaN al inicio
     condicion_agotado = (
-        df[columna_fecha].notna() &
+        df[columna_fecha].notna() & 
         df["Tipo Novedad"].isna()
     )
- 
     df.loc[condicion_agotado, "Tipo Novedad"] = "Agotado"
- 
+
     return df
  
  
