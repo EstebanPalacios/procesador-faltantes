@@ -4,18 +4,18 @@ import numpy as np
 import unicodedata
 import re
 import io
- 
+
 st.set_page_config(page_title="Informe Faltantes Profesional", layout="wide")
 st.title("Procesador Informe de Faltantes de Dispensación")
- 
+
 # =========================================================
 # FUNCIONES BASE
 # =========================================================
- 
+
 def normalizar_texto(texto):
     if not isinstance(texto, str):
         return texto
- 
+
     texto = texto.strip().lower()
     texto = ''.join(
         c for c in unicodedata.normalize('NFD', texto)
@@ -23,15 +23,15 @@ def normalizar_texto(texto):
     )
     texto = re.sub(r'[^a-z0-9 ]', '', texto)
     texto = re.sub(r'\s+', ' ', texto)
- 
+
     return texto.strip()
- 
- 
+
+
 def normalizar_columnas(df):
     df.columns = [normalizar_texto(col) for col in df.columns]
     return df
- 
- 
+
+
 def limpiar_valor(valor):
     if pd.isna(valor):
         return ""
@@ -39,15 +39,15 @@ def limpiar_valor(valor):
     valor = valor.replace(".0", "")
     valor = valor.strip()
     return valor
- 
- 
+
+
 def crear_id(df, col_bodega, col_codigo):
     df[col_bodega] = df[col_bodega].apply(limpiar_valor)
     df[col_codigo] = df[col_codigo].apply(limpiar_valor)
     df["ID"] = df[col_bodega] + df[col_codigo]
     return df
- 
- 
+
+
 def calcular_tipo_novedad(df, columna_fecha):
     # 1. Guardar el texto original antes de convertir a fecha
     # Esto evita errores si la celda contiene palabras como "Descontinuado"
@@ -85,12 +85,12 @@ def calcular_tipo_novedad(df, columna_fecha):
     df.loc[condicion_agotado, "Tipo Novedad"] = "Agotado"
 
     return df
- 
- 
+
+
 # =========================================================
 # LECTURA
 # =========================================================
- 
+
 def leer_archivo(file):
     file.seek(0)
     if file.name.endswith(".xlsx"):
@@ -107,23 +107,23 @@ def leer_archivo(file):
         raise ValueError("No se pudo leer CSV.")
     else:
         raise ValueError("Formato no soportado.")
- 
- 
+
+
 # =========================================================
 # TRANSFORMACIÓN PRINCIPAL
 # =========================================================
- 
+
 def transformar_informe(archivo_excel):
- 
+
     df_nuevo = pd.read_excel(archivo_excel, sheet_name="NUEVO")
     df_anterior = pd.read_excel(archivo_excel, sheet_name="ANTERIOR")
- 
+
     df_nuevo = normalizar_columnas(df_nuevo)
     df_anterior = normalizar_columnas(df_anterior)
- 
+
     df_nuevo = crear_id(df_nuevo, "bodega", "codigo")
     df_anterior = crear_id(df_anterior, "bod", "codigo")
- 
+
     mapeo = {
         "prioritario": "PRIORITARIO",
         "bodega": "Bod",
@@ -138,22 +138,25 @@ def transformar_informe(archivo_excel):
         "pendiente": "Pendiente",
         "traslado": "Traslados",
         "solicitud traslado": "Solicitud Traslados",
+        "cuenta": "CUENTA",
     }
- 
+
     df_nuevo = df_nuevo.rename(columns=mapeo)
- 
+
     df_nuevo = calcular_tipo_novedad(df_nuevo, "Fecha Novedad")
- 
+
     if "cuenta" not in df_anterior.columns:
         df_anterior["cuenta"] = ""
- 
+
     columnas_hist = ["ID", "abastecimiento", "dispensacion", "aliados", "responsable", "cuenta"]
     df_hist = df_anterior[columnas_hist].copy()
- 
+
+    # Si la columna CUENTA no venía en el archivo nuevo, la creamos vacía para evitar errores
+    if "CUENTA" not in df_nuevo.columns:
+        df_nuevo["CUENTA"] = ""
+
     df_final = df_nuevo.merge(df_hist, on="ID", how="left")
- 
-    df_final["CUENTA"] = ""
- 
+
     columnas_finales = [
         "ID","PRIORITARIO","Bod","Codigo","Fecha Novedad",
         "Producto","Generico","División","Planeador",
@@ -162,16 +165,16 @@ def transformar_informe(archivo_excel):
         "Tipo Novedad","abastecimiento","dispensacion",
         "aliados","CUENTA","responsable"
     ]
- 
+
     df_final = df_final[columnas_finales]
- 
+
     return df_final, df_hist
- 
- 
+
+
 # =========================================================
 # PROCESAR BODEGAS
 # =========================================================
- 
+
 def limpiar_texto(texto):
     if pd.isna(texto):
         return ""
@@ -179,47 +182,52 @@ def limpiar_texto(texto):
     texto = unicodedata.normalize('NFKD', texto)
     texto = ''.join(c for c in texto if not unicodedata.combining(c))
     return texto
- 
- 
+
+
 def procesar_bodega(file, numero_bodega):
- 
+
     if file is None:
         return {}
- 
+
     df = leer_archivo(file)
- 
+
     df["Codigo"] = df["Codigo"].apply(limpiar_valor)
     df["Codigo"] = df["Codigo"].astype(str).str.strip().str.upper()
     df["Nombres"] = df["Nombres"].apply(limpiar_texto)
- 
+
     df["ID"] = str(numero_bodega) + df["Codigo"]
- 
+
     consolidado = (
         df.groupby("ID")["Nombres"]
         .apply(lambda x: ", ".join(sorted(set(x))))
         .reset_index()
     )
- 
+
     return dict(zip(consolidado["ID"], consolidado["Nombres"]))
- 
- 
+
+
 # =========================================================
 # ASIGNACIÓN DE CUENTA CON RESPALDO HISTÓRICO
 # =========================================================
- 
+
 def asignar_cuenta(df_final, df_hist, dict_b1, dict_b7, dict_b5, dict_b6):
- 
+
     hist_dict = dict(zip(df_hist["ID"], df_hist["cuenta"]))
- 
+
     for i, row in df_final.iterrows():
- 
+
+        # 🔥 NUEVA LÓGICA: Si ya tiene un registro manual en CUENTA, lo respetamos
+        valor_existente = str(row["CUENTA"]).strip()
+        if valor_existente != "" and valor_existente.lower() != "nan":
+            continue
+
         bod = int(row["Bod"])
         codigo = limpiar_valor(row["Codigo"])
         codigo = str(codigo).strip().upper()
- 
+
         id_val = str(bod) + codigo
         cuenta = ""
- 
+
         if bod == 21:
             cuenta = "EPM"
         elif bod == 19:
@@ -234,53 +242,53 @@ def asignar_cuenta(df_final, df_hist, dict_b1, dict_b7, dict_b5, dict_b6):
             cuenta = dict_b5.get(id_val, "")
         elif bod == 6:
             cuenta = dict_b6.get(id_val, "")
- 
+
         # 🔥 SI NO ENCUENTRA EN BODEGA → BUSCAR EN HISTÓRICO
         if cuenta == "":
             cuenta = hist_dict.get(id_val, "")
- 
+
         df_final.at[i, "CUENTA"] = cuenta
- 
+
     return df_final
- 
- 
+
+
 # =========================================================
 # INTERFAZ
 # =========================================================
- 
+
 st.subheader("1️⃣ CARGAR INFORME DE FALTANTES DISPENSACIÓN")
 archivo_principal = st.file_uploader("Informe principal", type=["xlsx"])
- 
+
 st.subheader("2️⃣ CARGAR PEDIDOS DE BODEGAS  (BUSQUEDA DE CUENTAS)")
 b1 = st.file_uploader("Bodega 1", type=["xlsx","xls","csv"])
 b7 = st.file_uploader("Bodega 7", type=["xlsx","xls","csv"])
 b5 = st.file_uploader("Bodega 5", type=["xlsx","xls","csv"])
 b6 = st.file_uploader("Bodega 6", type=["xlsx","xls","csv"])
- 
+
 if st.button("PROCESAR INFORME COMPLETO"):
- 
+
     if archivo_principal is None:
         st.error("Debe cargar el informe principal.")
         st.stop()
- 
+
     df_final, df_hist = transformar_informe(archivo_principal)
- 
+
     dict_b1 = procesar_bodega(b1, 1)
     dict_b7 = procesar_bodega(b7, 7)
     dict_b5 = procesar_bodega(b5, 5)
     dict_b6 = procesar_bodega(b6, 6)
- 
+
     df_final = asignar_cuenta(df_final, df_hist, dict_b1, dict_b7, dict_b5, dict_b6)
- 
+
     # 🔥 ELIMINAR REGISTROS COMPLETAMENTE IDÉNTICOS
     df_final = df_final.drop_duplicates()
- 
+
     output = io.BytesIO()
     df_final.to_excel(output, index=False)
     output.seek(0)
- 
-    st.success("Proceso finalizado correctamente.")
- 
+
+    st.success("Proceso finalizado correctamente. Se respetaron los valores manuales de CUENTA.")
+
     st.download_button(
         label="Descargar RESULTADO_FINAL_CON_CUENTA.xlsx",
         data=output,
