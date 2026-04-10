@@ -138,7 +138,6 @@ def transformar_informe(archivo_excel):
         "pendiente": "Pendiente",
         "traslado": "Traslados",
         "solicitud traslado": "Solicitud Traslados",
-        "cuenta": "CUENTA",
     }
 
     df_nuevo = df_nuevo.rename(columns=mapeo)
@@ -151,11 +150,9 @@ def transformar_informe(archivo_excel):
     columnas_hist = ["ID", "abastecimiento", "dispensacion", "aliados", "responsable", "cuenta"]
     df_hist = df_anterior[columnas_hist].copy()
 
-    # Si la columna CUENTA no venía en el archivo nuevo, la creamos vacía para evitar errores
-    if "CUENTA" not in df_nuevo.columns:
-        df_nuevo["CUENTA"] = ""
-
     df_final = df_nuevo.merge(df_hist, on="ID", how="left")
+
+    df_final["CUENTA"] = ""
 
     columnas_finales = [
         "ID","PRIORITARIO","Bod","Codigo","Fecha Novedad",
@@ -215,11 +212,6 @@ def asignar_cuenta(df_final, df_hist, dict_b1, dict_b7, dict_b5, dict_b6):
     hist_dict = dict(zip(df_hist["ID"], df_hist["cuenta"]))
 
     for i, row in df_final.iterrows():
-
-        # 🔥 NUEVA LÓGICA: Si ya tiene un registro manual en CUENTA, lo respetamos
-        valor_existente = str(row["CUENTA"]).strip()
-        if valor_existente != "" and valor_existente.lower() != "nan":
-            continue
 
         bod = int(row["Bod"])
         codigo = limpiar_valor(row["Codigo"])
@@ -287,7 +279,7 @@ if st.button("PROCESAR INFORME COMPLETO"):
     df_final.to_excel(output, index=False)
     output.seek(0)
 
-    st.success("Proceso finalizado correctamente. Se respetaron los valores manuales de CUENTA.")
+    st.success("Proceso finalizado correctamente.")
 
     st.download_button(
         label="Descargar RESULTADO_FINAL_CON_CUENTA.xlsx",
